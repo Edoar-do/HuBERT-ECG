@@ -3,6 +3,12 @@ import os
 from sklearn.model_selection import train_test_split
 from torch.distributed import init_process_group, destroy_process_group
 import torch
+import numpy as np
+from scipy.io import loadmat
+from scipy.signal import decimate, resample
+from biosppy.signals.tools import filter_signal
+import re
+import wfdb
 
 def ddp_setup(rank: int, world_size: int):
     ''' Args:
@@ -48,5 +54,101 @@ def train_test_splitter(dataset_path, test_size, val_size):
     val_df.to_csv(os.path.join(dir_path, "val_supervised.csv"), index=False)
     test_df.to_csv(os.path.join(dir_path, "test_supervised.csv"), index=False)
 
+#iterate over dataframe
+def normalize(seq, smooth = 1e-8):
+    ''' Normalize a sequence between -1 and 1 '''
+    return 2 * (seq - np.min(seq, axis=1)[None].T) / (np.max(seq, axis=1) - np.min(seq, axis=1) + smooth)[None].T - 1
+
+def deriveLeads(I, II):
+    ''' Derive leads III, aVR, aVR, aVF from leads I and II '''
+    III = II-I 
+    aVR = -(I+II)/2 
+    aVL = (I-II)/2 
+    aVF = (II-I)/2
+    return III, aVR, aVL, aVF
+
+def apply_filter(signal, filter_bandwidth, fs=500):
+    ''' Bandpass filtering to remove noise, artifacts etc '''
+    # Calculate filter order
+    order = int(0.3 * fs)
+    # Filter signal
+    signal, _, _ = filter_signal(signal=signal, ftype='FIR', band='bandpass',
+                                order=order, frequency=filter_bandwidth, 
+                                sampling_rate=fs)
+    return signal
+
+def offline_preprocessing(path_to_dataset, path_to_dest_dir):
+    dataframe = pd.read_csv(path_to_dataset, dtype={'filename': str})
+    new_df = dataframe.copy()
+    physio_regex = r'^[A-Z]+\d+'
+    for i in range(len(dataframe)):
+        record = dataframe.iloc[i]
+        filename = record['filename']
+        # print(filename)
+        if '/' not in filename and re.match(physio_regex, filename): #from Physio          
+            #reading file
+            file_path = "./PHYSIONET/files/challenge-2021/1.0.3/training/" + filename
+            ecg_data = loadmat(file_path.replace(".hea", ".mat"))
+
+            with open(file_path, 'r') as f:
+                first_line = f.readline()
+            fs = int(first_line.split()[2])
+
+            #reading tracings
+            ecg_data = np.asarray(ecg_data['val'], dtype=np.float64)
+
+        elif filename.endswith(".txt"): #from Hefei
+            #reading file
+            file_path = os.path.join(".", "HEFEI", filename)
+            with open(file_path, 'r') as f:
+                lines = f.readlines()
+            
+            fs = 500
+
+            #reading tracings
+            ecg_data = [list(map(float, line.strip().split())) for line in lines[1:]]
+            ecg_data = np.array(ecg_data).T
+            III, aVR, aVL, aVF = deriveLeads(ecg_data[0], ecg_data[1])
+            ecg_data = np.vstack((ecg_data[:2], III, aVR, aVL, aVF, ecg_data[2:]))
+
+        else: #from TNMG
+            file_path = os.path.join(".", "TNMG", filename)                
+
+            #reading file
+            record = wfdb.rdrecord(file_path)
+
+            fs = int(record.fs)
+
+            #reading tracings
+            ecg_data = record.p_signal.T
+            III, aVR, aVL, aVF = deriveLeads(ecg_data[0], ecg_data[1])
+            ecg_data = np.vstack((ecg_data[:2], III, aVR, aVL, aVF, ecg_data[2:]))
+
+        #adapting to 500 Hz
+        if fs > 500:
+            ecg_data = decimate(ecg_data, int(fs / 500))
+        elif fs < 500:
+            ecg_data = resample(ecg_data, int(ecg_data.shape[-1] * (500 / fs)), axis=1)
+
+        #bandpass filtering
+        ecg_data = apply_filter(ecg_data, [0.05, 47])
+
+        #normalize to [-1, 1]
+        ecg_data = normalize(ecg_data)
+
+        # zero-padding
+        if ecg_data.shape[-1] < 5000:
+            padding = ((0, 0), (0, 5000-ecg_data.shape[-1])) # for right zero-padding
+            # padding = ((0, 0), ((window-ecg_data.shape[-1])//2, (window-ecg_data.shape[-1]+1)//2))
+            ecg_data = np.pad(ecg_data, padding, mode='constant', constant_values=0)
+
+        
+        #save this file
+        new_path = "./train_self_supervised/" + filename.split('/')[-1]
+        np.save(new_path, ecg_data)
+        #assign new_path to same record in new_df
+        new_df.loc[i, 'filename'] = new_path
+ 
+    
 # Hierarchical aggregatation
 # TODO: For the future it might be interesting to test different aggregations, following different criteria

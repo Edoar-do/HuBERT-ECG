@@ -82,11 +82,11 @@ val_set = ECGDatasetSelfSupervised("./val_self_supervised.csv", "./")
 test_set = ECGDatasetSelfSupervised("./test_self_supervised.csv", "./")
 
 #creating a dataloader to generata batches
-# no shuffle if distributed
-train_dl = DataLoader(train_set, batch_size=configs['batch_size'], shuffle=(not distributed), collate_fn=lambda x: x, num_workers=configs["num_workers"],
-                        pin_memory=pin_memory, sampler=(DistributedSampler(train_set) if distributed else None))
-val_dl = DataLoader(val_set, batch_size=configs['batch_size'], shuffle=(not distributed), collate_fn=lambda x: x, num_workers=configs["num_workers"],
-                        sampler = (DistributedSampler(val_set) if distributed else None), pin_memory=pin_memory)
+# no shuffle if configs["distributed"]
+train_dl = DataLoader(train_set, batch_size=configs['batch_size'], shuffle=(not configs["distributed"]), collate_fn=lambda x: x, num_workers=configs["num_workers"],
+                        pin_memory=pin_memory, sampler=(configs["distributed"]Sampler(train_set) if configs["distributed"] else None))
+val_dl = DataLoader(val_set, batch_size=configs['batch_size'], shuffle=(not configs["distributed"]), collate_fn=lambda x: x, num_workers=configs["num_workers"],
+                        sampler = (configs["distributed"]Sampler(val_set) if configs["distributed"] else None), pin_memory=pin_memory)
 test_dl = DataLoader(test_set, batch_size=configs['batch_size'], shuffle=True, collate_fn=lambda x: x, num_workers=configs["num_workers"],
                         pin_memory=pin_memory)
 
@@ -111,7 +111,7 @@ model = FullModel(embedding_type=configs['embedder_type'],
 
 # model = torch.compile(model)
 
-if distributed: # use DDP
+if configs["distributed"]: # use DDP
     device_ids = [0, 1]
     model = DDP(model, device_ids=device_ids)
 else: # use single GPU

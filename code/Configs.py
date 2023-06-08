@@ -47,6 +47,4 @@ def get_configs(path_to_configs_json):
 
 pin_memory = False
 
-distributed = False
-
 

@@ -32,5 +32,6 @@
     "embedder_type": ["linear"],
     "pos_enc_type": ["1d"],
     "decoding_type": ["fcn"],
-    "num_workers":4
+    "num_workers":4,
+    "distributed": true
 }
