@@ -77,14 +77,25 @@ def apply_filter(signal, filter_bandwidth, fs=500):
                                 sampling_rate=fs)
     return signal
 
-def offline_preprocessing(path_to_dataset, path_to_dest_dir):
-    dataframe = pd.read_csv(path_to_dataset, dtype={'filename': str})
-    new_df = dataframe.copy()
+def offline_preprocessing(path_to_dataset, path_to_dest_dir, start = 0):
+    print("Reading dataset...")
+    dataframe = pd.read_csv(path_to_dataset, dtype={'filename': str}, usecols=[0])
+    print("Dataset read")
     physio_regex = r'^[A-Z]+\d+'
-    for i in range(len(dataframe)):
-        record = dataframe.iloc[i]
-        filename = record['filename']
-        # print(filename)
+    if start > 0:
+        print(f"Continue preprocessing from index {start} ...")
+    else:
+        print("Starting preprocessing...")
+    for _, series in dataframe.iteritems():
+        filename = series['filename']
+
+        #check if the final npy file is already present in dest dir. If s, continue
+        new_path = os.path.join(path_to_dest_dir, filename.split('/')[-1])
+        if os.path.isfile(new_path + ".npy"):
+            #print("skip")
+            if i % 100 == 0:
+                print(f"Skipped {i} files")
+            continue
         if '/' not in filename and re.match(physio_regex, filename): #from Physio          
             #reading file
             file_path = "./PHYSIONET/files/challenge-2021/1.0.3/training/" + filename
@@ -144,10 +155,81 @@ def offline_preprocessing(path_to_dataset, path_to_dest_dir):
 
         
         #save this file
-        new_path = "./train_self_supervised/" + filename.split('/')[-1]
         np.save(new_path, ecg_data)
-        #assign new_path to same record in new_df
-        new_df.loc[i, 'filename'] = new_path
+
+        #at which point are we?
+        if i % 100 == 0:
+            print(f"Processed {i} files")
+
+def callable_offline_preprocessing(row, path_to_dest_dir=None):
+    filename = row['filename']
+    #check if the final npy file is already present in dest dir. If s, continue
+    physio_regex = r'^[A-Z]+\d+'
+    new_path = os.path.join(path_to_dest_dir, filename.split('/')[-1])
+    if os.path.isfile(new_path + ".npy"):
+        #print("skip")
+        return
+    if '/' not in filename and re.match(physio_regex, filename): #from Physio          
+        #reading file
+        file_path = "./PHYSIONET/files/challenge-2021/1.0.3/training/" + filename
+        ecg_data = loadmat(file_path.replace(".hea", ".mat"))
+
+        with open(file_path, 'r') as f:
+            first_line = f.readline()
+        fs = int(first_line.split()[2])
+
+        #reading tracings
+        ecg_data = np.asarray(ecg_data['val'], dtype=np.float64)
+
+    elif filename.endswith(".txt"): #from Hefei
+        #reading file
+        file_path = os.path.join(".", "HEFEI", filename)
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+        
+        fs = 500
+
+        #reading tracings
+        ecg_data = [list(map(float, line.strip().split())) for line in lines[1:]]
+        ecg_data = np.array(ecg_data).T
+        III, aVR, aVL, aVF = deriveLeads(ecg_data[0], ecg_data[1])
+        ecg_data = np.vstack((ecg_data[:2], III, aVR, aVL, aVF, ecg_data[2:]))
+
+    else: #from TNMG
+        file_path = os.path.join(".", "TNMG", filename)                
+
+        #reading file
+        record = wfdb.rdrecord(file_path)
+
+        fs = int(record.fs)
+
+        #reading tracings
+        ecg_data = record.p_signal.T
+        III, aVR, aVL, aVF = deriveLeads(ecg_data[0], ecg_data[1])
+        ecg_data = np.vstack((ecg_data[:2], III, aVR, aVL, aVF, ecg_data[2:]))
+
+    #adapting to 500 Hz
+    if fs > 500:
+        ecg_data = decimate(ecg_data, int(fs / 500))
+    elif fs < 500:
+        ecg_data = resample(ecg_data, int(ecg_data.shape[-1] * (500 / fs)), axis=1)
+
+    #bandpass filtering
+    ecg_data = apply_filter(ecg_data, [0.05, 47])
+
+    #normalize to [-1, 1]
+    ecg_data = normalize(ecg_data)
+
+    # zero-padding
+    if ecg_data.shape[-1] < 5000:
+        padding = ((0, 0), (0, 5000-ecg_data.shape[-1])) # for right zero-padding
+        # padding = ((0, 0), ((window-ecg_data.shape[-1])//2, (window-ecg_data.shape[-1]+1)//2))
+        ecg_data = np.pad(ecg_data, padding, mode='constant', constant_values=0)
+
+    
+    #save this file
+    np.save(new_path, ecg_data)
+
  
     
 # Hierarchical aggregatation
