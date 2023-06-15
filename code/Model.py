@@ -8,6 +8,48 @@ from torch.cuda.amp import autocast
 
 ###<----- Start of encoding stack ----->###
 
+class Patcher(nn.Module):
+    def __init__(self, patch_size : tuple):
+        super(Patcher, self).__init__()
+        self.h, self.w = patch_size
+    
+    def forward(self, ecg_data : torch.Tensor):
+        # takes (batch_size, 12, 5000)
+        bs, n_leads, window = ecg_data.shape
+        assert n_leads % self.h == 0
+        assert window % self.w == 0
+        # return (batch_size, n_patches, patch_height, patch_width)
+        return ecg_data.unfold(1, self.h, self.h).unfold(2, self.w, self.w).reshape(bs, -1, self.h, self.w)
+
+
+class Masker(nn.Module):
+    def __init__(self, mask_token, mask_perc):
+        super(Masker, self).__init__()
+        self.mask_token = mask_token
+        self.mask_perc = mask_perc
+
+    def masking(self, batch_patches : torch.Tensor, mask_token):
+        batch_mask_indexer = np.random.choice([True, False], size=bs, p=[0.85, .15])       
+        batch_indeces = []
+        for b, to_be_masked in enumerate(batch_mask_indexer):
+            if to_be_masked: #some patches of the b instance will probably be masked
+                patches_mask_indexer = torch.from_numpy(np.random.choice([True, False], 
+                    size=batch_patches.shape[1], p=[self.mask_perc, 1-self.mask_perc]))
+                #mask the patches of the b instance where corresponding patches_mask_indexer is True
+                batch_patches[b] = torch.where(patches_mask_indexer.unsqueeze(1).unsqueeze(2), torch.Tensor(mask_token), batch_patches[b])
+                #save the indeces of the patches that have been masked under the form of a list
+                batch_indeces.append(torch.argwhere(patches_mask_indexer).squeeze(1).tolist())
+            else:
+                batch_indeces.append([])
+        return batch_patches, batch_indeces
+
+    def forward(self, patches : torch.Tensor):
+        #takes (batch_size, n_patches, patch_height, patch_width)
+        #plus masked patches (bs, n_patches, patch_heitght, patch_width)
+        #plus list bs long containing lists of indeces of patches that have been masked per instance
+        return self.masking(patches, configs['mask_token'])
+
+
 class SimpleLinearEmbedder(nn.Module):
     ''' Simple linear projector as embedder of the ECG patches. Like ViTs.
     Works on both 1D and 2D patches'''
