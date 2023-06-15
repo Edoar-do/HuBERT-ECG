@@ -259,9 +259,9 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
 
             batch_ecg_data, batch_age, batch_sex = tuple(zip(*batch))
 
-            #batch_age and batch_sex are full of nan. Don't care though, they are not used in the self_superised training
+            #batch_age and batch_sex are tuples of nan. Don't care though, they are not used in the self_supervised training
 
-            batch_age = torch.Tensor(batch_age).cuda().to(dtype=torch.float) # normalized age, (batch_size, 1)
+            batch_age = torch.Tensor(batch_age).cuda().to(dtype=torch.float) # (batch_size, 1)
             batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
 
             # batch_ecg_data is a tuple of torch.Tensor (12, 5000) batch_size long
