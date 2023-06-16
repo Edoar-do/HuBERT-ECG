@@ -10,9 +10,12 @@ from Configs import distributed, get_configs
 from torch.cuda.amp import autocast, GradScaler
 from Losses import PatchRecLoss
 
-
+global configs 
 global patience_count
 global best_val_loss
+
+global patcher
+global masker
 
 
 def visual_comparing(rec_patches, real_patches):
@@ -29,116 +32,194 @@ def visual_comparing(rec_patches, real_patches):
     plt.legend()
     return fig
 
-def test(test_dataloader, model, loss_fn, *metrics):
-    '''Testing of a model over a testing set. Returns test loss + additional performance depending on input metrics.'''
-
+def test_supervised(test_dataloader, model, loss_fn, *metrics):
+    '''
+    Test `model` performance on data retrieved by `test_dataloader` in a self-supervised fashion.
+    Performance are measure according to `loss_fn` and additional `metrics`.
+    Params:
+        - test_dataloader: instance of torch.utils.data.DataLoader to fetch data from test set
+        - model: the model to test
+        - loss_fn: the loss function which evaluate the model with
+        - metrics: any additional metric which evaluate the model with
+    Returns:
+        - test_loss
+        - test labels
+        - test probabilities
+    '''
     model.eval()
     losses = []
     lbls = []
     probs = []
     sigmoid = nn.Sigmoid()
 
+    print("\t Testing model performance...")
+
+    for i, batch in tqdm(enumerate(test_dataloader), total=len(test_dataloader)):
+        batch_patches, batch_age, batch_sex, batch_labels = tuple(zip(*batch))
+        batch_patches = torch.stack(batch_patches, dim=0).cuda().to(dtype=torch.float)
+        batch_patches = patcher(batch_patches)
+        #normalize age
+        age_min = test_dataloader.dataset.ecg_dataframe['age'].min()
+        age_max = test_dataloader.dataset.ecg_dataframe['age'].max()
+        batch_age = torch.Tensor((batch_age - age_min)/(age_max - age_min)).cuda().to(dtype=torch.float) # normalized age, (batch_size, 1)
+        batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
+        with torch.no_grad():
+            batch_labels = torch.stack(batch_labels, dim=0).cuda().to(dtype=torch.float)
+            pred = model(batch_patches, batch_age, batch_sex)
+            loss = loss_fn(pred, batch_labels)
+            probs = sigmoid(pred).detach().cpu().numpy()
+            lbls = batch_labels.detach().cpu().numpy()
+            lbls.append(lbls)
+            probs.append(probs)
+        losses.append(loss.item())
+
+    test_loss = np.mean(losses)
+    print("\t End of testing. General loss: ", test_loss)
+    wandb.log({"test_loss" : test_loss})
+    return test_loss, lbls, probs #validation loss for a given epoch, labels and probs
+
+def test_self_supervised(test_dataloader, model, loss_fn, *metrics):
+    '''
+    Test `model` performance on data retrieved by `test_dataloader` in a self-supervised fashion.
+    Performance are measure according to `loss_fn` and additional `metrics`.
+    Params:
+        - test_dataloader: instance of torch.utils.data.DataLoader to fetch data from test set
+        - model: the model to test
+        - loss_fn: the loss function which evaluate the model with
+        - metrics: any additional metric which evaluate the model with
+    Returns:
+        - test_loss
+    '''
+
+    model.eval()
+    losses = []
+
     example_patches = [] # for wandb reporting
 
-    print("Testing model performance...")
+    print("\t Testing model performance...")
     
     for i, batch in tqdm(enumerate(test_dataloader), total=len(test_dataloader)):
 
-        batch_patches, batch_age, batch_sex, batch_labels = tuple(zip(*batch))
-
-        #batch_age and batch_sex could be full on nan if self-supervised pretraining is used and instances in batch are taken from tnmg subsets
-        # it's not a problem though because age and sex are not used in self-supervised pretraining 
+        batch_patches, batch_age, batch_sex = tuple(zip(*batch))
 
         batch_patches = torch.stack(batch_patches, dim=0).cuda().to(dtype=torch.float)
+        batch_patches = patcher(batch_patches)
 
         if isinstance(loss_fn, PatchRecLoss):
-            batch_indeces_masked_patches, batch_real_patches = tuple(zip(*batch_labels)) #tuple(lists) and tuple(tensors)
-            batch_real_patches = torch.stack(batch_real_patches, dim=0).cuda().to(dtype=torch.float) #all with shaped (n_patches, patch_height, patch_width) -> after stacking (batch_size, n_patches, patch_height, patch_width)
-            batch_age = torch.Tensor(batch_age, ).cuda().to(dtype=torch.float) # normalized age, (batch_size, 1)
+            batch_masked_patches, batch_indeces_masked_patches = masker(batch_patches.detach().clone())
+            batch_age = torch.Tensor(batch_age).cuda().to(dtype=torch.float) # (batch_size, 1)
             batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
             with torch.no_grad():
-                pred = model(batch_patches, batch_age, batch_sex)
-                loss, rec_patches, real_patches = loss_fn(pred, batch_real_patches, batch_indeces_masked_patches)
-                example_patches.append(wandb.Image(visual_comparing(rec_patches, real_patches)))
-        else:
-            #normalize age
-            age_min = test_dataloader.dataset.ecg_dataframe['age'].min()
-            age_max = test_dataloader.dataset.ecg_dataframe['age'].max()
-            batch_age = torch.Tensor((batch_age - age_min)/(age_max - age_min)).cuda().to(dtype=torch.float) # normalized age, (batch_size, 1)
-            batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
-            with torch.no_grad():
-                batch_labels = torch.stack(batch_labels, dim=0).cuda().to(dtype=torch.float)
-                pred = model(batch_patches, batch_age, batch_sex)
-                loss = loss_fn(pred, batch_labels)
-                probs = sigmoid(pred).detach().cpu().numpy()
-                lbls = batch_labels.detach().cpu().numpy()
-                lbls.append(lbls)
-                probs.append(probs)
+                with autocast():
+                    pred = model(batch_masked_patches, batch_age, batch_sex)
+                    loss, rec_patches, real_patches = loss_fn(pred, batch_patches, batch_indeces_masked_patches)
+            
 
         losses.append(loss.item())
 
     test_loss = np.mean(losses)
 
-    print("End of testing. General loss: ", test_loss)
+    print("\t End of testing. General loss: ", test_loss)
 
     if isinstance(loss_fn, PatchRecLoss):
         wandb.log({"test_loss" : test_loss, "Examples" : example_patches})
         return (test_loss, ) #test loss 
-    else:
-        wandb.log({"test_loss" : test_loss})
-        return test_loss, lbls, probs #validation loss for a given epoch, labels and probs
-    
-def validate(val_dataloader, model, loss_fn, *metrics):
-    '''Validation of a model over a validation set. Returns validation loss.'''
+
+
+def validate_supervised(val_dataloader, model, loss_fn, *metrics):
+    '''Validate a `model` in a supervised fashion once per epoch using data fetched by `val_dataloader` according to `loss_fn` function and any additional `metric`.
+    Params:
+        - val_dataloader: instance of torch.utils.data.DataLoader that fetches data from validation set
+        - model: the model to validate
+        - loss_fn: the loss function to validate the model on
+        - metrics: any additional metrics to validate the model on
+    Returns:
+        - validation loss for the epoch
+        - [labels, probabilities] if supervised trainining (opt.)
+    '''
     model.eval()
     epoch_losses = []
     epoch_lbls = []
     epoch_probs = []
-    sigmoid = nn.Sigmoid()
+    sigmoid = nn.Sigmoid() 
+
+    print("\t Validating model performace...")
+
+    for i, batch in tqdm(enumerate(val_dataloader), total=len(val_dataloader)):
+
+        batch_ecg_data, batch_age, batch_sex, batch_labels = tuple(zip(*batch))
+
+        batch_ecg_data = torch.stack(batch_ecg_data, dim=0).cuda().to(dtype=torch.float)
+        batch_patches = patcher(batch_ecg_data)
+
+        # normalize age
+        age_min = val_dataloader.dataset.ecg_dataframe['age'].min()
+        age_max = val_dataloader.dataset.ecg_dataframe['age'].max()
+        batch_age = torch.Tensor((batch_age - age_min)/(age_max - age_min)).cuda().to(dtype=torch.float) # normalized age, (batch_size, 1)
+
+        batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
+
+        batch_labels = torch.stack(batch_labels, dim=0).cuda().to(dtype=torch.float)
+
+        with torch.no_grad():
+            with autocast():
+                pred = model(batch_patches, batch_age, batch_sex)
+                loss = loss_fn(pred, batch_labels)
+                probs = sigmoid(pred).detach().cpu().numpy()
+                lbls = batch_labels.detach().cpu().numpy()
+                epoch_lbls.append(lbls)
+                epoch_probs.append(probs) 
+        
+        epoch_losses.append(loss.item())
+
+    val_loss = np.mean(epoch_losses)
+    wandb.log({"val_loss" : val_loss})
+    return val_loss, epoch_lbls, epoch_probs #validation loss for a given epoch, labels and probs for a given epoch
+
+
+def validate_self_supervised(val_dataloader, model, loss_fn, *metrics):
+    '''Validate a `model` in a self_supervised fashion once per epoch using data fetched by `val_dataloader` according to `loss_fn` function and any additional `metric`.
+    Params:
+        - val_dataloader: instance of torch.utils.data.DataLoader that fetches data from validation set
+        - model: the model to validate
+        - loss_fn: the loss function to validate the model on
+        - metrics: any additional metrics to validate the model on
+    Returns:
+        - validation loss for the epoch
+        - [labels, probabilities] if supervised trainining (opt.)
+    '''
+    model.eval()
+    epoch_losses = []
+
+    print("\t Validating model performance...")
     
     for i, batch in tqdm(enumerate(val_dataloader), total=len(val_dataloader)):
 
-        batch_patches, batch_age, batch_sex, batch_labels = tuple(zip(*batch))
+        batch_ecg_data, batch_age, batch_sex = tuple(zip(*batch))
 
-        #batch_age and batch_sex could be full on nan if self-supervised pretraining is used and instances in batch are taken from tnmg subsets
-        # it's not a problem though because age and sex are not used in self-supervised pretraining 
+        #batch_ecg_data is a tuple of torch.Tensor (12, 5000) that is batch_size long
+        #batch_age, batch_sex are tuples on nan (float) that are batch_size long in case of self-supervised (supervised) training
 
-        batch_patches = torch.stack(batch_patches, dim=0).cuda().to(dtype=torch.float)
+        batch_ecg_data = torch.stack(batch_ecg_data, dim=0).cuda().to(dtype=torch.float) #--> (bs, 12, 5000)
+
+        batch_patches = patcher (batch_ecg_data)
+        
 
         if isinstance(loss_fn, PatchRecLoss):
-            batch_indeces_masked_patches, batch_real_patches = tuple(zip(*batch_labels)) #tuple(lists) and tuple(tensors)
-            batch_real_patches = torch.stack(batch_real_patches, dim=0).cuda().to(dtype=torch.float).cuda #all with shaped (n_patches, patch_height, patch_width) -> after stacking (batch_size, n_patches, patch_height, patch_width)
-            batch_age = torch.Tensor(batch_age).cuda().to(dtype=torch.float) # normalized age, (batch_size, 1)
+            batch_masked_patches, batch_indeces_masked_patches = masker(batch_patches.detach().clone())
+            batch_age = torch.Tensor(batch_age).cuda().to(dtype=torch.float) # (batch_size, 1)
             batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
             with torch.no_grad():
                 with autocast():
-                    pred = model(batch_patches, batch_age, batch_sex)
-                    loss, rec_patches, real_patches = loss_fn(pred, batch_real_patches, batch_indeces_masked_patches)
-        else:
-            # normalize age
-            age_min = val_dataloader.dataset.ecg_dataframe['age'].min()
-            age_max = val_dataloader.dataset.ecg_dataframe['age'].max()
-            batch_age = torch.Tensor((batch_age - age_min)/(age_max - age_min)).cuda().to(dtype=torch.float) # normalized age, (batch_size, 1)
-            batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
-            with torch.no_grad():
-                with autocast():
-                    batch_labels = torch.stack(batch_labels, dim=0).cuda().to(dtype=torch.float)
-                    pred = model(batch_patches, batch_age, batch_sex)
-                    loss = loss_fn(pred, batch_labels)
-                    probs = sigmoid(pred).detach().cpu().numpy()
-                    lbls = batch_labels.detach().cpu().numpy()
-                    epoch_lbls.append(lbls)
-                    epoch_probs.append(probs)
+                    pred = model(batch_masked_patches, batch_age, batch_sex)
+                    loss, rec_patches, real_patches = loss_fn(pred, batch_patches, batch_indeces_masked_patches)
 
         epoch_losses.append(loss.item())
 
     val_loss = np.mean(epoch_losses)
     if isinstance(loss_fn, PatchRecLoss):
         wandb.log({"val_loss" : val_loss})
-        return (np.mean(epoch_losses), ) #validation loss for a given epoch
-    else:
-        wandb.log({"val_loss" : val_loss})
-        return val_loss, epoch_lbls, epoch_probs #validation loss for a given epoch, labels and probs for a given epoch
+        return np.mean(epoch_losses) #validation loss for a given epoch
 
 def save_model_modules(model, optimizer, path, model_name):
     if distributed:
@@ -152,6 +233,7 @@ def save_model_modules(model, optimizer, path, model_name):
             'model': model.state_dict(),
         }, path + model_name + "_full_model.pth")  
 
+#TODO: da rivedere train_supervised
 def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val_dataloader, early_stopping=False, patience=5, save_model=False, model_name=None, *metrics):
     ''' Supervised training loop for a model given batches of instances generated by a train_datalaoder, an optimizer and the number of epochs.
     Returns training loss for every epoch + labels and corresponding output probs for every epoch.'''
@@ -232,19 +314,35 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
     return training_loss, training_lbls_probs, validation_loss, validation_lbls_probs
 
 def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_dataloader, early_stopping=False, patience=5, save_model=False, model_name=None, *metrics):
-    ''' Self-supervised training loop for a model given batches of instances generated by a train_datalaoder, an optimizer and the number of epochs.
-    Returns training loss for every epoch.'''
+    ''' Train a `model` passed as parameter in a self-supervised fashion for `epochs` epochs, using data provided by a `train_dataloader`.
+    The evaluation throughout training is done using data provided by a `val_dataloader` and can take into account additional `metrics`.
+    Params:
+        - train_dataloader: instance of torch.utils.data.DataLoader that retrives batches of data from training set
+        - model: the model to train and optimize
+        - optimizer: the optimizer to be used
+        - epochs: integer number of epochs to train the model
+        - val_dataloader: instance of torch.utils.data.DataLoader that retrieves batches of data from validation set
+        - early_stopping: bool parameter to indicate whether to apply earlt stopping condition
+        - patience: integer number of epochs within which no improvement on validation set is tolerated
+        - save_model: bool param to indicate whether to save the model
+        - model_name: str to indicate the model name
+        - *metrics: any additional metric to evaluate the model on (not implemented)
+    Returns:
+        - training loss (list[float])
+        - validation loss (list[float])
+    '''
 
-    configs = get_configs("./ECG_pretraining/code/configs.json")
+    configs = get_configs("./ECG_pretraining/code/configs.json") #global var initialized here, once and forever
+
     rec_loss_fn = PatchRecLoss(loss_type='mse')    
     training_loss = []
     validation_loss = []
-    patience_count = 0
-    best_val_loss = np.inf
+    patience_count = 0 #global var initialized here, once and forever
+    best_val_loss = np.inf #global var initialized here, once and forever
     scaler = GradScaler()
-    
-    patcher = Patcher((configs['patch_height'], configs['patch_width'])).cuda()
-    masker = Masker(configs['mask_token'], configs['mask_perc']).cuda()
+
+    patcher = Patcher((configs['patch_height'], configs['patch_width'])).cuda() #global var initialized here, once and forever
+    masker = Masker(configs['mask_token'], configs['mask_perc']).cuda() #global var initialized here, once and forever
 
     
     for i in range(epochs):
@@ -295,7 +393,7 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
         #validation
         if distributed:
             val_dataloader.sampler.set_epoch(i)
-        epoch_val_loss = validate(val_dataloader, model, rec_loss_fn)[0]
+        epoch_val_loss = validate_self_supervised(val_dataloader, model, rec_loss_fn)
         validation_loss.append(epoch_val_loss)
 
         print(f"Training loss: {training_loss[-1]} - Validation loss: {validation_loss[-1]}")

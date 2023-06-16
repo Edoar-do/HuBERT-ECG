@@ -11,7 +11,10 @@ from scipy.signal import decimate, resample
 from biosppy.signals.tools import filter_signal
 from Configs import get_configs
 
-# ECGDatasetSupervised.py
+#TODO: da rivedere e riscrivere alla luce dei cambiamenti e affinché sia compatibile con ***_supervised
+#todo: *** i {train, val, test}
+#todo: mi aspetto un ecg:data tensor (12, 5000), age e sex float e labels tensor (n_labels)
+
 class ECGDatasetSupervised(Dataset):
         def __init__(self, path_to_dataset_csv, ecg_dir_path):
             self.ecg_dataframe = pd.read_csv(path_to_dataset_csv, dtype={'filename' : str})

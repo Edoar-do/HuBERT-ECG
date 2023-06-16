@@ -2,26 +2,30 @@ import numpy as np
 import pandas as pd
 import torch
 import os
-import wfdb
-import re
 from torch.utils.data import Dataset
-from scipy.io import loadmat
-from scipy.signal import decimate, resample
-from biosppy.signals.tools import filter_signal
-from Configs import get_configs
 
-
-# ECGDatasetSelfSupervised.py
 class ECGDatasetSelfSupervised(Dataset):
     def __init__(self, path_to_dataset_csv, ecg_dir_path):
+        ''' Params:
+            - path_to_dataset_csv: the full path to the csv file containing references to the dataset's instances
+            - ecg_dir_path: the path to the directory containing the instances to be retrieved (e.g. "./train_self_supervised")
+        '''
         self.ecg_dataframe = pd.read_csv(path_to_dataset_csv, dtype={'filename': str})
         self.ecg_dir_path = ecg_dir_path # something like "./***_self_supevised", *** in {train, val, test}
 
     
     def __len__(self):
+        ''' Returns the length of the dataset '''
         return len(self.ecg_dataframe)
     
     def __getitem__(self, idx):
+        '''
+        Params:
+            - idx: integer number that indicates the location of a given instance in the dataframe
+        Returns:
+            - torch.Tensor (12,5000) containing the pre-processed 12L-ECG
+            - age, sex (both nan in the this implementation)
+        '''
         record = self.ecg_dataframe.iloc[idx]
         ecg_filename = record['filename'] # the mere filename
         age = np.nan

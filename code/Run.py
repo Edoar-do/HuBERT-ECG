@@ -14,7 +14,8 @@ import os
 from torch import nn
 import numpy as np
 from Optimizer import NoamOpt
-from Training_and_testing import train_self_supervised, train_supervised, PatchRecLoss, test
+from Training_and_testing import train_self_supervised, train_supervised, test_self_supervised
+from Losses import PatchRecLoss
 
 import torch.multiprocessing as mp
 from torch.utils.data.distributed import DistributedSampler
@@ -84,9 +85,9 @@ test_set = ECGDatasetSelfSupervised("./test_self_supervised.csv", "./")
 #creating a dataloader to generata batches
 # no shuffle if configs["distributed"]
 train_dl = DataLoader(train_set, batch_size=configs['batch_size'], shuffle=(not configs["distributed"]), collate_fn=lambda x: x, num_workers=configs["num_workers"],
-                        pin_memory=pin_memory, sampler=(configs["distributed"]Sampler(train_set) if configs["distributed"] else None))
+                        pin_memory=pin_memory, sampler=(DistributedSampler(train_set) if configs["distributed"] else None))
 val_dl = DataLoader(val_set, batch_size=configs['batch_size'], shuffle=(not configs["distributed"]), collate_fn=lambda x: x, num_workers=configs["num_workers"],
-                        sampler = (configs["distributed"]Sampler(val_set) if configs["distributed"] else None), pin_memory=pin_memory)
+                        sampler = (DistributedSampler(val_set) if configs["distributed"] else None), pin_memory=pin_memory)
 test_dl = DataLoader(test_set, batch_size=configs['batch_size'], shuffle=True, collate_fn=lambda x: x, num_workers=configs["num_workers"],
                         pin_memory=pin_memory)
 
