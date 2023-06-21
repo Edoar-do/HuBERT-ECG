@@ -29,7 +29,6 @@ import sys
 
 if __name__ == "__main__":
 
-
     # if not received any arguments, abort
     if len(sys.argv) < 2:
         print("Expected configuration file path as argument")
@@ -51,7 +50,7 @@ if __name__ == "__main__":
     
 # load configuration file
 # NOTE: the configs.json file must be changed every time before a new run in order to test new configurations during training (also, machine capabilities must be taken into account)
-configs = get_configs("./code/configs.json")
+configs = get_configs(sys.argv[1])
 
 os.system("wandb login b73191cf01967a55aa21e93a37d3fc3ce6078859")
 
@@ -68,6 +67,10 @@ else:
     configs['decoding_type'] = decoding_type
 configs['pos_enc_type'] = np.random.choice(configs['pos_enc_type'])
 
+print(f"Embedder type {configs['embedder_type']}")
+print(f"Positional encoding {configs['pos_enc_type']}")
+print(f"Decodying type {configs['decoding_type']}")
+
 wandb.init(entity="cardi-ai", project="ECG-pretraining", config=configs, group="self-supervised")
 
 
@@ -77,25 +80,21 @@ np.random.seed(42)
 if torch.cuda.is_available():
     torch.cuda.manual_seed(42)
 
-#creating a dataset for self-supervised pre-training
-train_set = ECGDatasetSelfSupervised("./train_self_supervised.csv", "./")
-val_set = ECGDatasetSelfSupervised("./val_self_supervised.csv", "./")
-test_set = ECGDatasetSelfSupervised("./test_self_supervised.csv", "./")
+print("creating datasets for self-supervised pre-training...")
+train_set = ECGDatasetSelfSupervised("./train_self_supervised_processed.csv", "./train_self_supervised")
+val_set = ECGDatasetSelfSupervised("./val_self_supervised_processed.csv", "./val_self_supervised")
+test_set = ECGDatasetSelfSupervised("./test_self_supervised_processed.csv", "./test_self_supervised")
 
-#creating a dataloader to generata batches
+print("creating dataloaders to generata batches...")
 # no shuffle if configs["distributed"]
-train_dl = DataLoader(train_set, batch_size=configs['batch_size'], shuffle=(not configs["distributed"]), collate_fn=lambda x: x, num_workers=configs["num_workers"],
-                        pin_memory=pin_memory, sampler=(DistributedSampler(train_set) if configs["distributed"] else None))
-val_dl = DataLoader(val_set, batch_size=configs['batch_size'], shuffle=(not configs["distributed"]), collate_fn=lambda x: x, num_workers=configs["num_workers"],
-                        sampler = (DistributedSampler(val_set) if configs["distributed"] else None), pin_memory=pin_memory)
-test_dl = DataLoader(test_set, batch_size=configs['batch_size'], shuffle=True, collate_fn=lambda x: x, num_workers=configs["num_workers"],
-                        pin_memory=pin_memory)
+train_dl = DataLoader(train_set, batch_size=configs['batch_size'], shuffle=(not configs["distributed"]), collate_fn=lambda x: x, num_workers=configs["num_workers"])
+val_dl = DataLoader(val_set, batch_size=configs['batch_size'], shuffle=(not configs["distributed"]), collate_fn=lambda x: x, num_workers=configs["num_workers"])
+test_dl = DataLoader(test_set, batch_size=configs['batch_size'], shuffle=True, collate_fn=lambda x: x, num_workers=configs["num_workers"])
 
-# Creation of model
 
 import torch._dynamo
 torch._dynamo.config.suppress_errors = True
-
+print("creating model...")
 model = FullModel(embedding_type=configs['embedder_type'],
                     patch_height=configs['patch_height'],
                     patch_width=configs['patch_width'],

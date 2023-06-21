@@ -7,7 +7,7 @@ def get_configs(path_to_configs_json):
     configs = json.load(open(path_to_configs_json))
     configs['n_patches'] = configs['n_leads'] * configs['window'] // (configs['patch_height'] * configs['patch_width'])
     patch_size = (configs['patch_height'], configs['patch_width'])
-    configs['mask_token'] = [([-1] * (patch_size[1]//2)) + ([1] * (patch_size[1]//2))] * patch_size[0]
+    configs['mask_token'] = torch.Tensor([([-1] * (patch_size[1]//2)) + ([1] * (patch_size[1]//2))] * patch_size[0]).to(dtype=torch.float).cuda()
     configs['patch_size'] = patch_size
     return configs
 

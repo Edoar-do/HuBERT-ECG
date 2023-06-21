@@ -1,4 +1,5 @@
 import torch
+from torch import nn
 
 class PatchRecLoss(nn.Module):
     def __init__(self, loss_type : str = 'mse'):

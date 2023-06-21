@@ -153,7 +153,7 @@ def offline_preprocessing(path_to_dataset, path_to_dest_dir, start = 0):
             # padding = ((0, 0), ((window-ecg_data.shape[-1])//2, (window-ecg_data.shape[-1]+1)//2))
             ecg_data = np.pad(ecg_data, padding, mode='constant', constant_values=0)
 
-        
+        # ! manca un ecg_data = ecg_data[:, :5000]
         #save this file
         np.save(new_path, ecg_data)
 
@@ -226,7 +226,7 @@ def callable_offline_preprocessing(row, path_to_dest_dir=None):
         # padding = ((0, 0), ((window-ecg_data.shape[-1])//2, (window-ecg_data.shape[-1]+1)//2))
         ecg_data = np.pad(ecg_data, padding, mode='constant', constant_values=0)
 
-    
+    # ! manca un ecg_data = ecg_data[:, :5000]
     #save this file
     np.save(new_path, ecg_data)
 

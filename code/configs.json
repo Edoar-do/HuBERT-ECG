@@ -27,11 +27,11 @@
     "warmup": 4000,
     "n_heads": 4,
     "dim_ff": 128,
-    "hidden_dim": 128,
-    "batch_size": 512,
-    "embedder_type": ["linear"],
-    "pos_enc_type": ["1d"],
-    "decoding_type": ["fcn"],
+    "hidden_dim": 64,
+    "batch_size": 448,
+    "embedder_type": ["linear", "conv"],
+    "pos_enc_type": ["1d", "2d"],
+    "decoding_type": ["fcn", "mirrored", "nar"],
     "num_workers":4,
-    "distributed": true
+    "distributed": false
 }

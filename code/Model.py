@@ -3,7 +3,6 @@ import torch
 from torch import nn
 import math
 import numpy as np
-from Configs import *
 from torch.cuda.amp import autocast
 
 ###<----- Start of encoding stack ----->###
@@ -29,25 +28,25 @@ class Masker(nn.Module):
         self.mask_perc = mask_perc
 
     def masking(self, batch_patches : torch.Tensor, mask_token):
-        batch_mask_indexer = np.random.choice([True, False], size=bs, p=[0.85, .15])       
+        batch_mask_indexer = np.random.choice([True, False], size=batch_patches.shape[0], p=[0.85, .15])       
         batch_indeces = []
         for b, to_be_masked in enumerate(batch_mask_indexer):
             if to_be_masked: #some patches of the b instance will probably be masked
                 patches_mask_indexer = torch.from_numpy(np.random.choice([True, False], 
-                    size=batch_patches.shape[1], p=[self.mask_perc, 1-self.mask_perc]))
+                    size=batch_patches.shape[1], p=[self.mask_perc, 1-self.mask_perc])).cuda()
                 #mask the patches of the b instance where corresponding patches_mask_indexer is True
-                batch_patches[b] = torch.where(patches_mask_indexer.unsqueeze(1).unsqueeze(2), torch.Tensor(mask_token), batch_patches[b])
+                batch_patches[b] = torch.where(patches_mask_indexer.unsqueeze(1).unsqueeze(2), mask_token, batch_patches[b])
                 #save the indeces of the patches that have been masked under the form of a list
                 batch_indeces.append(torch.argwhere(patches_mask_indexer).squeeze(1).tolist())
             else:
                 batch_indeces.append([])
         return batch_patches, batch_indeces
 
-    def forward(self, patches : torch.Tensor):
+    def forward(self, batch_patches : torch.Tensor):
         #takes (batch_size, n_patches, patch_height, patch_width)
         #plus masked patches (bs, n_patches, patch_heitght, patch_width)
         #plus list bs long containing lists of indeces of patches that have been masked per instance
-        return self.masking(patches, configs['mask_token'])
+        return self.masking(batch_patches, self.mask_token)
 
 
 class SimpleLinearEmbedder(nn.Module):
@@ -58,7 +57,7 @@ class SimpleLinearEmbedder(nn.Module):
         self.n_patches = n_patches
         self.patch_height = patch_height
         self.patch_width = patch_width
-        self.linear_embedding = nn.Linear(patch_height * patch_width, embedding_size)
+        self.linear_embedding = nn.Linear(patch_height * patch_width, embedding_size, bias=False)
         self.name = 'linear projector'
     
     def forward(self, x):
@@ -105,7 +104,7 @@ class ConvEmbedder(nn.Module):
             nn.BatchNorm2d(n_patches),
             nn.ReLU(inplace=True)).cuda()
         
-        self.linear_projection = nn.Linear(self.get_output_shape(), embedding_size)
+        self.linear_projection = nn.Linear(self.get_output_shape(), embedding_size, bias=False)
         # remove conv_embedder from device
         self.conv_embedder.cpu()
 
@@ -251,8 +250,8 @@ class FullyConvDecoder(nn.Module):
             nn.ReLU(inplace=True)
         ).cuda()
 
-        self.w_proj = nn.Linear(self.get_output_shape()[0], patch_width)
-        self.h_proj = nn.Linear(self.get_output_shape()[1], patch_height)
+        self.w_proj = nn.Linear(self.get_output_shape()[0], patch_width, bias=False)
+        self.h_proj = nn.Linear(self.get_output_shape()[1], patch_height, bias=False)
 
         self.conv_decoder.cpu()
 
@@ -313,8 +312,8 @@ class MirroredDecoder(nn.Module):
 
         self.reversed_encoder = ReversedTransformerEncoder(n_layers, d_model, p_dropout, dim_ff, n_heads)
         if embeddying_type == 'linear':
-            self.lin1 = nn.Linear(d_model, patch_width)
-            self.lin2 = nn.Linear(1, patch_height)
+            self.lin1 = nn.Linear(d_model, patch_width, bias=False)
+            self.lin2 = nn.Linear(1, patch_height, bias=False)
         if embeddying_type == 'conv':
             self.conv_embed = FullyConvDecoder(n_patches, d_model, patch_height, patch_width)
         
@@ -382,8 +381,8 @@ class NonAutoregressiveTransformerDecoder(nn.Module):
 
         self.layers = nn.ModuleList([NonAutoregressiveTransformerDecoderLayer(d_model, p_dropout, n_heads, dim_ff) for _ in range(n_decoding_layers)])
 
-        self.lin1 = nn.Linear(d_model, patch_width)
-        self.lin2 = nn.Linear(1, patch_height)
+        self.lin1 = nn.Linear(d_model, patch_width, bias=False)
+        self.lin2 = nn.Linear(1, patch_height, bias=False)
 
     def forward(self, encoder_output, pos_encodings):
         # encoder_output is (batch_size, n_patches, d_model)
