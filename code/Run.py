@@ -24,6 +24,8 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 import os
 import sys
 
+from loguru import logger
+
 #NOTE: when running on 40gb gpu, max batch_size = 256
 # hence, when running on 80gb gpu, max batch_size = 512
 
@@ -31,21 +33,21 @@ if __name__ == "__main__":
 
     # if not received any arguments, abort
     if len(sys.argv) < 2:
-        print("Expected configuration file path as argument")
+        logger.error("Expected configuration file path as argument")
         exit(1)
     
     #if too many arguments, abort
     if len(sys.argv) > 2:
-        print("Expected only one argument: configuration file path")
+        logger.error("Expected only one argument: configuration file path")
         exit(1)
 
     #check existence of configuration file path and is json
     if not os.path.exists(sys.argv[1]) and not sys.argv[1].endswith(".json"):
-        print("Configuration file does not exist")
+        logger.error("Configuration file does not exist")
         exit(1)
 
     if not torch.cuda.is_available():
-        print("CUDA not available. CPU training not supported")
+        logger.error("CUDA not available. CPU training not supported")
         exit(1)
     
 # load configuration file
@@ -67,9 +69,9 @@ else:
     configs['decoding_type'] = decoding_type
 configs['pos_enc_type'] = np.random.choice(configs['pos_enc_type'])
 
-print(f"Embedder type {configs['embedder_type']}")
-print(f"Positional encoding {configs['pos_enc_type']}")
-print(f"Decodying type {configs['decoding_type']}")
+logger.info(f"Embedder type {configs['embedder_type']}")
+logger.info(f"Positional encoding {configs['pos_enc_type']}")
+logger.info(f"Decodying type {configs['decoding_type']}")
 
 wandb.init(entity="cardi-ai", project="ECG-pretraining", config=configs, group="self-supervised")
 
@@ -80,21 +82,27 @@ np.random.seed(42)
 if torch.cuda.is_available():
     torch.cuda.manual_seed(42)
 
-print("creating datasets for self-supervised pre-training...")
-train_set = ECGDatasetSelfSupervised("./train_self_supervised_processed.csv", "./train_self_supervised")
-val_set = ECGDatasetSelfSupervised("./val_self_supervised_processed.csv", "./val_self_supervised")
-test_set = ECGDatasetSelfSupervised("./test_self_supervised_processed.csv", "./test_self_supervised")
+logger.info("creating datasets for self-supervised pre-training...")
 
-print("creating dataloaders to generata batches...")
+train_set = ECGDatasetSelfSupervised("./train_self_supervised_processed.csv", "./train_self_supervised", reduce=True)
+val_set = ECGDatasetSelfSupervised("./val_self_supervised_processed.csv", "./val_self_supervised", reduce=True)
+test_set = ECGDatasetSelfSupervised("./test_self_supervised_processed.csv", "./test_self_supervised", reduce=True)
+
+logger.info("creating dataloaders to generata batches...")
+
 # no shuffle if configs["distributed"]
-train_dl = DataLoader(train_set, batch_size=configs['batch_size'], shuffle=(not configs["distributed"]), collate_fn=lambda x: x, num_workers=configs["num_workers"])
-val_dl = DataLoader(val_set, batch_size=configs['batch_size'], shuffle=(not configs["distributed"]), collate_fn=lambda x: x, num_workers=configs["num_workers"])
+train_dl = DataLoader(train_set, batch_size=configs['batch_size'], shuffle=(not configs["distributed"]),
+                      collate_fn=lambda x: x, num_workers=configs["num_workers"], sampler=(DistributedSampler(train_set) if distributed else None))
+val_dl = DataLoader(val_set, batch_size=configs['batch_size'], shuffle=(not configs["distributed"]),
+                    collate_fn=lambda x: x, num_workers=configs["num_workers"], sampler=(DistributedSampler(val_set) if distributed else None))
 test_dl = DataLoader(test_set, batch_size=configs['batch_size'], shuffle=True, collate_fn=lambda x: x, num_workers=configs["num_workers"])
 
 
 import torch._dynamo
 torch._dynamo.config.suppress_errors = True
-print("creating model...")
+
+logger.info("creating model...")
+
 model = FullModel(embedding_type=configs['embedder_type'],
                     patch_height=configs['patch_height'],
                     patch_width=configs['patch_width'],
@@ -112,10 +120,11 @@ model = FullModel(embedding_type=configs['embedder_type'],
 # model = torch.compile(model)
 
 if configs["distributed"]: # use DDP
+    logger.info("Mapping model to distributed cuda")
     device_ids = [0, 1]
     model = DDP(model, device_ids=device_ids)
 else: # use single GPU
-    print("Mapping model to cuda")
+    logger.info("Mapping model to cuda")
     model = model.cuda()
 
 # print(model, "\n")
@@ -126,7 +135,7 @@ for p in model.parameters():
         nn.init.xavier_uniform_(p)
 
 #printing number of parameters
-print(f"Number of parameters: {sum(p.data.nelement() for p in model.parameters())}")
+logger.info(f"Number of parameters: {sum(p.data.nelement() for p in model.parameters())}")
 
 #start training
 optimizer = NoamOpt(configs['d_model'], 1, configs['warmup'], torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))

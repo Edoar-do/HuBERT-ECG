@@ -26,3 +26,5 @@ class NoamOpt:
         return self.factor * \
             (self.model_size ** (-0.5) *
             min(step ** (-0.5), step * self.warmup ** (-1.5)))
+            
+# TODO : inserire un optimizer come quello di RoBERTa

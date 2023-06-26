@@ -9,6 +9,7 @@ from Model import FullModel, Patcher, Masker
 from Configs import get_configs
 from torch.cuda.amp import autocast, GradScaler
 from Losses import PatchRecLoss
+from loguru import logger
 
 global configs 
 global patience_count
@@ -37,10 +38,10 @@ def test_supervised(test_dataloader, model, loss_fn, *metrics):
     Test `model` performance on data retrieved by `test_dataloader` in a self-supervised fashion.
     Performance are measure according to `loss_fn` and additional `metrics`.
     Params:
-        - test_dataloader: instance of torch.utils.data.DataLoader to fetch data from test set
-        - model: the model to test
-        - loss_fn: the loss function which evaluate the model with
-        - metrics: any additional metric which evaluate the model with
+        - `test_dataloader`: instance of torch.utils.data.DataLoader to fetch data from test set
+        - `model`: the model to test
+        - `loss_fn`: the loss function which evaluate the model with
+        - `metrics`: any additional metric which evaluate the model with
     Returns:
         - test_loss
         - test labels
@@ -51,16 +52,18 @@ def test_supervised(test_dataloader, model, loss_fn, *metrics):
     lbls = []
     probs = []
     sigmoid = nn.Sigmoid()
+    
+    age_min = test_dataloader.dataset.ecg_dataframe['age'].min()
+    age_max = test_dataloader.dataset.ecg_dataframe['age'].max()
 
-    print("\t Testing model performance...")
+    logger.info("\t Testing model performance...")
 
     for i, batch in tqdm(enumerate(test_dataloader), total=len(test_dataloader)):
         batch_patches, batch_age, batch_sex, batch_labels = tuple(zip(*batch))
         batch_patches = torch.stack(batch_patches, dim=0).cuda().to(dtype=torch.float)
         batch_patches = patcher(batch_patches)
         #normalize age
-        age_min = test_dataloader.dataset.ecg_dataframe['age'].min()
-        age_max = test_dataloader.dataset.ecg_dataframe['age'].max()
+
         batch_age = torch.Tensor((batch_age - age_min)/(age_max - age_min)).cuda().to(dtype=torch.float) # normalized age, (batch_size, 1)
         batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
         with torch.no_grad():
@@ -74,7 +77,7 @@ def test_supervised(test_dataloader, model, loss_fn, *metrics):
         losses.append(loss.item())
 
     test_loss = np.mean(losses)
-    print("\t End of testing. General loss: ", test_loss)
+    logger.success("\t End of testing. General loss: ", test_loss)
     wandb.log({"test_loss" : test_loss})
     return test_loss, lbls, probs #validation loss for a given epoch, labels and probs
 
@@ -83,10 +86,10 @@ def test_self_supervised(test_dataloader, model, loss_fn, *metrics):
     Test `model` performance on data retrieved by `test_dataloader` in a self-supervised fashion.
     Performance are measure according to `loss_fn` and additional `metrics`.
     Params:
-        - test_dataloader: instance of torch.utils.data.DataLoader to fetch data from test set
-        - model: the model to test
-        - loss_fn: the loss function which evaluate the model with
-        - metrics: any additional metric which evaluate the model with
+        - `test_dataloader`: instance of torch.utils.data.DataLoader to fetch data from test set
+        - `model`: the model to test
+        - `loss_fn`: the loss function which evaluate the model with
+        - `metrics`: any additional metric which evaluate the model with
     Returns:
         - test_loss
     '''
@@ -96,7 +99,7 @@ def test_self_supervised(test_dataloader, model, loss_fn, *metrics):
 
     example_patches = [] # for wandb reporting
 
-    print("\t Testing model performance...")
+    logger.info("\t Testing model performance...")
     
     for i, batch in tqdm(enumerate(test_dataloader), total=len(test_dataloader)):
 
@@ -113,13 +116,14 @@ def test_self_supervised(test_dataloader, model, loss_fn, *metrics):
                 with autocast():
                     pred = model(batch_masked_patches, batch_age, batch_sex)
                     loss, rec_patches, real_patches = loss_fn(pred, batch_patches, batch_indeces_masked_patches)
+                    example_patches.append(wandb.Image(visual_comparing(rec_patches, real_patches)))
             
 
         losses.append(loss.item())
 
     test_loss = np.mean(losses)
 
-    print("\t End of testing. General loss: ", test_loss)
+    logger.success("\t End of testing. General loss: ", test_loss)
 
     if isinstance(loss_fn, PatchRecLoss):
         wandb.log({"test_loss" : test_loss, "Examples" : example_patches})
@@ -128,10 +132,10 @@ def test_self_supervised(test_dataloader, model, loss_fn, *metrics):
 def validate_supervised(val_dataloader, model, loss_fn, *metrics):
     '''Validate a `model` in a supervised fashion once per epoch using data fetched by `val_dataloader` according to `loss_fn` function and any additional `metric`.
     Params:
-        - val_dataloader: instance of torch.utils.data.DataLoader that fetches data from validation set
-        - model: the model to validate
-        - loss_fn: the loss function to validate the model on
-        - metrics: any additional metrics to validate the model on
+        - `val_dataloader`: instance of torch.utils.data.DataLoader that fetches data from validation set
+        - `model`: the model to validate
+        - `loss_fn`: the loss function to validate the model on
+        - `metrics`: any additional metrics to validate the model on
     Returns:
         - validation loss for the epoch
         - [labels, probabilities] if supervised trainining (opt.)
@@ -141,8 +145,11 @@ def validate_supervised(val_dataloader, model, loss_fn, *metrics):
     epoch_lbls = []
     epoch_probs = []
     sigmoid = nn.Sigmoid() 
+    
+    age_min = val_dataloader.dataset.ecg_dataframe['age'].min()
+    age_max = val_dataloader.dataset.ecg_dataframe['age'].max()
 
-    print("\t Validating model performace...")
+    logger.info("\t Validating model performace...")
 
     for i, batch in tqdm(enumerate(val_dataloader), total=len(val_dataloader)):
 
@@ -152,8 +159,7 @@ def validate_supervised(val_dataloader, model, loss_fn, *metrics):
         batch_patches = patcher(batch_ecg_data)
 
         # normalize age
-        age_min = val_dataloader.dataset.ecg_dataframe['age'].min()
-        age_max = val_dataloader.dataset.ecg_dataframe['age'].max()
+
         batch_age = torch.Tensor((batch_age - age_min)/(age_max - age_min)).cuda().to(dtype=torch.float) # normalized age, (batch_size, 1)
 
         batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
@@ -178,10 +184,10 @@ def validate_supervised(val_dataloader, model, loss_fn, *metrics):
 def validate_self_supervised(val_dataloader, model, loss_fn, *metrics):
     '''Validate a `model` in a self_supervised fashion once per epoch using data fetched by `val_dataloader` according to `loss_fn` function and any additional `metric`.
     Params:
-        - val_dataloader: instance of torch.utils.data.DataLoader that fetches data from validation set
-        - model: the model to validate
-        - loss_fn: the loss function to validate the model on
-        - metrics: any additional metrics to validate the model on
+        - `val_dataloader`: instance of torch.utils.data.DataLoader that fetches data from validation set
+        - `model`: the model to validate
+        - `loss_fn`: the loss function to validate the model on
+        - `metrics`: any additional metrics to validate the model on
     Returns:
         - validation loss for the epoch
         - [labels, probabilities] if supervised trainining (opt.)
@@ -189,7 +195,7 @@ def validate_self_supervised(val_dataloader, model, loss_fn, *metrics):
     model.eval()
     epoch_losses = []
 
-    print("\t Validating model performance...")
+    logger.info("\t Validating model performance...")
     
     for i, batch in tqdm(enumerate(val_dataloader), total=len(val_dataloader)):
 
@@ -235,16 +241,16 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
     ''' Train a `model` passed as parameter in a supervised fashion for `epochs` epochs, using data provided by a `train_dataloader`.
     The evaluation throughout training is done using data provided by a `val_dataloader` and can take into account additional `metrics`.
     Params:
-        - train_dataloader: instance of torch.utils.data.DataLoader that retrives batches of data from training set
-        - model: the model to train and optimize
-        - optimizer: the optimizer to be used
-        - epochs: integer number of epochs to train the model
-        - val_dataloader: instance of torch.utils.data.DataLoader that retrieves batches of data from validation set
-        - early_stopping: bool parameter to indicate whether to apply earlt stopping condition
-        - patience: integer number of epochs within which no improvement on validation set is tolerated
-        - save_model: bool param to indicate whether to save the model
-        - model_name: str to indicate the model name
-        - *metrics: any additional metric to evaluate the model on (not implemented)
+        - `train_dataloader`: instance of torch.utils.data.DataLoader that retrives batches of data from training set
+        - `model`: the model to train and optimize
+        - `optimizer`: the optimizer to be used
+        - `epochs`: integer number of epochs to train the model
+        - `val_dataloader`: instance of torch.utils.data.DataLoader that retrieves batches of data from validation set
+        - `early_stopping`: bool parameter to indicate whether to apply earlt stopping condition
+        - `patience`: integer number of epochs within which no improvement on validation set is tolerated
+        - `save_model`: bool param to indicate whether to save the model
+        - `model_name`: str to indicate the model name
+        - *`metrics`: any additional metric to evaluate the model on (not implemented)
     Returns:
         - training loss (list[float])
         - validation loss (list[float])
@@ -259,6 +265,9 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
     validation_lbls_probs = []
 
     bce_loss_fn = nn.BCEWithLogitsLoss()
+    
+    age_min = train_datalaoder.dataset.ecg_dataframe['age'].min()
+    age_max = train_datalaoder.dataset.ecg_dataframe['age'].max()
 
     model.train()
 
@@ -266,7 +275,7 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
         epoch_losses = []
         epoch_probs = []
         epoch_lbls = []
-        print(f"Epoch {i+1}/{epochs}")
+        logger.info(f"Epoch {i+1}/{epochs}")
         if configs['distributed']:
             train_datalaoder.sampler.set_epoch(i)
         for j, batch in tqdm(enumerate(train_datalaoder), total=len(train_datalaoder)):
@@ -275,8 +284,7 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
 
             batch_ecg_data, batch_age, batch_sex, batch_labels = tuple(zip(*batch)) #return tuple of patches, tuple of ages, tuple of sexes, tuple of labels; each bs instances long       
 
-            age_min = train_datalaoder.dataset.ecg_dataframe['age'].min()
-            age_max = train_datalaoder.dataset.ecg_dataframe['age'].max()
+
             batch_age = torch.Tensor((batch_age - age_min)/(age_max - age_min)).cuda().to(dtype=torch.float) # normalized age, (batch_size, 1)
             batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
 
@@ -309,7 +317,9 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
         validation_loss.append(epoch_val_loss)
         validation_lbls_probs.append((np.concatenate(epoch_val_lbls), np.concatenate(epoch_val_probs)))
 
-        print(f"Training loss: {training_loss[-1]} - Validation loss: {validation_loss[-1]}")
+        logger.success(f"Training loss: {training_loss[-1]} - Validation loss: {validation_loss[-1]}")
+        
+        wandb.log({"training_loss": training_loss[-1], "validation_loss": validation_loss[-1]})
 
         #early stopping
         if early_stopping:
@@ -321,26 +331,27 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
             else: #not improving
                 patience_count += 1
                 if patience_count >= patience:
-                    print(f"Early stopping at epoch {i+1}. Patience {patience} reached.")
+                    logger.warning(f"Early stopping at epoch {i+1}. Patience {patience} reached.")
                     break
     
     # end of training
+    wandb.log({"training_loss": training_loss, "validation_loss": validation_loss})
     return training_loss, training_lbls_probs, validation_loss, validation_lbls_probs
 
 def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_dataloader, early_stopping=False, patience=5, save_model=False, model_name=None, *metrics):
     ''' Train a `model` passed as parameter in a self-supervised fashion for `epochs` epochs, using data provided by a `train_dataloader`.
     The evaluation throughout training is done using data provided by a `val_dataloader` and can take into account additional `metrics`.
     Params:
-        - train_dataloader: instance of torch.utils.data.DataLoader that retrives batches of data from training set
-        - model: the model to train and optimize
-        - optimizer: the optimizer to be used
-        - epochs: integer number of epochs to train the model
-        - val_dataloader: instance of torch.utils.data.DataLoader that retrieves batches of data from validation set
-        - early_stopping: bool parameter to indicate whether to apply earlt stopping condition
-        - patience: integer number of epochs within which no improvement on validation set is tolerated
-        - save_model: bool param to indicate whether to save the model
-        - model_name: str to indicate the model name
-        - *metrics: any additional metric to evaluate the model on (not implemented)
+        - `train_dataloader`: instance of torch.utils.data.DataLoader that retrives batches of data from training set
+        - `model`: the model to train and optimize
+        - `optimizer`: the optimizer to be used
+        - `epochs`: integer number of epochs to train the model
+        - `val_dataloader`: instance of torch.utils.data.DataLoader that retrieves batches of data from validation set
+        - `early_stopping`: bool parameter to indicate whether to apply earlt stopping condition
+        - `patience`: integer number of epochs within which no improvement on validation set is tolerated
+        - `save_model`: bool param to indicate whether to save the model
+        - `model_name`: str to indicate the model name
+        - *`metrics`: any additional metric to evaluate the model on (not implemented)
     Returns:
         - training loss (list[float])
         - validation loss (list[float])
@@ -361,7 +372,7 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
     
     for i in range(epochs):
         epoch_losses = []
-        print(f"Epoch {i+1}/{epochs}")
+        logger.info(f"Epoch {i+1}/{epochs}")
         if configs['distributed']:
             train_datalaoder.sampler.set_epoch(i)
         model.train()
@@ -410,7 +421,7 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
         epoch_val_loss = validate_self_supervised(val_dataloader, model, rec_loss_fn)
         validation_loss.append(epoch_val_loss)
 
-        print(f"Training loss: {training_loss[-1]} - Validation loss: {validation_loss[-1]}")
+        logger.success(f"Training loss: {training_loss[-1]} - Validation loss: {validation_loss[-1]}")
 
         wandb.log({"training_loss": training_loss[-1], "validation_loss": validation_loss[-1]})
 
@@ -424,7 +435,7 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
             else: #not improving
                 patience_count += 1
                 if patience_count >= patience:
-                    print(f"Early stopping at epoch {i+1}, Patience {patience} reached.")
+                    logger.warning(f"Early stopping at epoch {i+1}, Patience {patience} reached.")
                     break
 
     #end of training
