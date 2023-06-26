@@ -1,11 +1,9 @@
 #Run.py
-
 import wandb
 import torch
 from Model import FullModel
 from torch.utils.data import DataLoader
 from ECGDatasetSelfSupervised import ECGDatasetSelfSupervised
-from ECGDatasetSupervised import ECGDatasetSupervised
 from Configs import *
 import matplotlib.pyplot as plt
 import wandb
@@ -14,7 +12,8 @@ import os
 from torch import nn
 import numpy as np
 from Optimizer import NoamOpt
-from Training_and_testing import train_self_supervised, train_supervised, test_self_supervised
+from Training import train_self_supervised
+from Test import test_self_supervised
 from Losses import PatchRecLoss
 
 import torch.multiprocessing as mp

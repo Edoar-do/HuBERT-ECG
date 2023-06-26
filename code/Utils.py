@@ -9,6 +9,7 @@ from scipy.signal import decimate, resample
 from biosppy.signals.tools import filter_signal
 import re
 import wfdb
+import glob
 
 def ddp_setup(rank: int, world_size: int):
     ''' Args:
@@ -231,6 +232,54 @@ def callable_offline_preprocessing(row, path_to_dest_dir=None):
     np.save(new_path, ecg_data)
 
  
+def create_supervised_processed_dataset(path_to_csv_supervised_dataset):
+    
+    dataframe = pd.read_csv(path_to_csv_supervised_dataset, dtype={'filename':str})
+    new_dataframe = dataframe.copy()
+    
+    train_path = "./train_self_supervised"
+    val_path = "./val_self_supervised"
+    test_path = "./test_self_supervised"
+    
+    paths = [train_path, val_path, test_path]
+    
+    physio_regex = r'^[A-Z]+\d+'
+    
+    for idx, row in dataframe.iterrows():
+        
+        filename = row['filename']        
+
+        if '/' not in filename and re.match(physio_regex, filename): #from Physio 
+                       
+            for path in paths:
+                new_path = os.path.join(path, filename + ".npy")
+                if os.path.isfile(new_path):
+                    new_dataframe.loc[idx, 'filename'] = new_path
+                    break            
+
+        elif filename.endswith(".txt"): #from Hefei
+            
+            for path in paths:
+                new_path = os.path.join(path, filename + ".npy")
+                if os.path.isfile(new_path):
+                    new_dataframe.loc[idx, 'filename'] = new_path
+                    break            
+                
+        else: #from TNMG
+            
+            for path in paths:
+                new_path = os.path.join(path, "TNMG" + filename + "_N1.npy")
+                if os.path.isfile(new_path):
+                    new_dataframe.loc[idx, 'filename'] = new_path
+                    break
+    
+    new_dataframe.to_csv(path_to_csv_supervised_dataset[:-4] + "_processed.csv", index=False)            
+            
+            
+            
+
+    
+    
     
 # Hierarchical aggregatation
 # TODO: For the future it might be interesting to test different aggregations, following different criteria
