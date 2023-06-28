@@ -18,7 +18,8 @@ class Patcher(nn.Module):
         assert n_leads % self.h == 0
         assert window % self.w == 0
         # return (batch_size, n_patches, patch_height, patch_width)
-        return ecg_data.unfold(1, self.h, self.h).unfold(2, self.w, self.w).reshape(bs, -1, self.h, self.w)
+        out = ecg_data.unfold(1, self.h, self.h).unfold(2, self.w, self.w)
+        return out.reshape(bs, -1, self.h, self.w), out.shape
 
 
 class Masker(nn.Module):

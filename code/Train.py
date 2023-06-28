@@ -39,7 +39,7 @@ def validate_supervised(val_dataloader, model, loss_fn, patcher, *metrics):
         batch_ecg_data, batch_age, batch_sex, batch_labels = tuple(zip(*batch))
 
         batch_ecg_data = torch.stack(batch_ecg_data, dim=0).cuda().to(dtype=torch.float)
-        batch_patches = patcher(batch_ecg_data)
+        batch_patches, _ = patcher(batch_ecg_data)
 
         # normalize age
 
@@ -89,7 +89,7 @@ def validate_self_supervised(val_dataloader, model, loss_fn, patcher, masker, *m
         #batch_age, batch_sex are tuples on nan (float) that are batch_size long in case of self-supervised (supervised) training
 
         batch_ecg_data = torch.stack(batch_ecg_data, dim=0).cuda().to(dtype=torch.float) #--> (bs, 12, 5000)
-        batch_patches = patcher (batch_ecg_data)
+        batch_patches, _ = patcher (batch_ecg_data)
         
 
         if isinstance(loss_fn, PatchRecLoss):
@@ -180,7 +180,7 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
             batch_ecg_data = torch.stack(batch_ecg_data, dim=0).cuda().to(dtype=torch.float)
             batch_labels = torch.stack(batch_labels, dim=0).cuda().to(dtype=torch.float)
 
-            batch_patches = patcher(batch_ecg_data) # (batch_size, 12, 5000)
+            batch_patches, _ = patcher(batch_ecg_data) # (batch_size, 12, 5000)
 
             # compute prediction and loss
             with autocast():
@@ -282,7 +282,7 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
             batch_ecg_data = torch.stack(batch_ecg_data, dim=0).cuda().to(dtype=torch.float)
             #now it's a torch.Tensor (batch_size, 12, 5000)
 
-            batch_patches = patcher (batch_ecg_data) # (batch_size, n_patches, patch_height, patch_width)
+            batch_patches, _ = patcher (batch_ecg_data) # (batch_size, n_patches, patch_height, patch_width)
             batch_masked_patches, batch_indeces_masked_patches = masker(batch_patches.detach().clone())
             
             #all the above tensors should be on cuda since all deriva from batch_ecg_data that is on cuda

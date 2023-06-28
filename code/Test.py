@@ -11,16 +11,22 @@ from Losses import PatchRecLoss
 from loguru import logger
 
 
-def visual_comparing(rec_patches, real_patches):
-    '''Returns a figure with n_patches subplots, each containing a pair of reconstructed and real patches.'''
-    #rec_patches and real_patches: (batch_size, n_patches, patch_height, patch_width)
-    #compare only first instance in batch and maximum 5 patches
-    batch_size, n_patches, patch_height, patch_width = rec_patches.shape
-    fig, axs = plt.subplots(n_patches, patch_height, figsize=(20, 20))
-    for i_patch in range(max(5, n_patches)):
-        for lead in range(patch_height):
-            axs[i_patch, lead].plot(rec_patches[0, i_patch, lead, :].detach().cpu().numpy(), label='reconstructed')
-            axs[i_patch, lead].plot(real_patches[0, i_patch, lead, :].detach().cpu().numpy(), label='real')
+def visual_comparing(rec_patches, real_patches, unfolded_shape):
+    '''Returns a figure showing the `reconstructed patches` and `real_patches` after their folding to original size'''
+    bs, res_height, res_width, patch_height, patch_width = unfolded_shape
+    rec_patches = rec_patches.view(unfolded_shape)
+    original_h = res_height * patch_height
+    original_w = res_width * patch_width
+    rec_patches = rec_patches.permute(0, 1, 3, 2, 4).contiguous().view(bs, original_h, original_w) #(bs, n_leads, window_size)
+    
+    real_patches = real_patches.view(unfolded_shape)
+    real_patches = real_patches.permute(0, 1, 3, 2, 4).contiguous().view(bs, original_h, original_w) #(bs, n_leads, window_size)
+    
+    #subplots with original_h rows and 1 column. Each subplos shows the reconstructed lead and the real lead
+    fig, axs = plt.subplots(original_h, 1, figsize=(20, 20), sharex=True)
+    for lead in range(original_h):
+        axs[lead].plot(rec_patches[0, lead, :], label="reconstructed")
+        axs[lead].plot(real_patches[0, lead, :], label="real")
     
     plt.legend()
     return fig
@@ -56,16 +62,16 @@ def test_supervised(test_dataloader, model, loss_fn, *metrics):
     logger.info("\t Testing model performance...")
 
     for i, batch in tqdm(enumerate(test_dataloader), total=len(test_dataloader)):
-        batch_patches, batch_age, batch_sex, batch_labels = tuple(zip(*batch))
-        batch_patches = torch.stack(batch_patches, dim=0).cuda().to(dtype=torch.float)
-        batch_patches = patcher(batch_patches)
+        batch_ecg_data, batch_age, batch_sex, batch_labels = tuple(zip(*batch))
+        batch_ecg_data = torch.stack(batch_ecg_data, dim=0).cuda().to(dtype=torch.float)
+        batch_ecg_data, _ = patcher(batch_ecg_data)
         #normalize age
 
         batch_age = torch.Tensor((batch_age - age_min)/(age_max - age_min)).cuda().to(dtype=torch.float) # normalized age, (batch_size, 1)
         batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float)# (batch_size, 1)
         with torch.no_grad():
             batch_labels = torch.stack(batch_labels, dim=0).cuda().to(dtype=torch.float)
-            pred = model(batch_patches, batch_age, batch_sex)
+            pred = model(batch_ecg_data, batch_age, batch_sex)
             loss = loss_fn(pred, batch_labels)
             probs = sigmoid(pred).detach().cpu().numpy()
             lbls = batch_labels.detach().cpu().numpy()
@@ -100,26 +106,24 @@ def test_self_supervised(test_dataloader, model, loss_fn, *metrics):
     model.eval()
     losses = []
 
-    example_patches = [] # for wandb reporting
-
     logger.info("\t Testing model performance...")
     
     for i, batch in tqdm(enumerate(test_dataloader), total=len(test_dataloader)):
 
-        batch_patches, batch_age, batch_sex = tuple(zip(*batch))
+        batch_ecg_data, batch_age, batch_sex = tuple(zip(*batch))
 
-        batch_patches = torch.stack(batch_patches, dim=0).cuda().to(dtype=torch.float)
-        batch_patches = patcher(batch_patches)
+        batch_ecg_data = torch.stack(batch_ecg_data, dim=0).cuda().to(dtype=torch.float)
+        batch_ecg_data, unfolded_shape = patcher(batch_ecg_data)
 
         if isinstance(loss_fn, PatchRecLoss):
-            batch_masked_patches, batch_indeces_masked_patches = masker(batch_patches.detach().clone())
+            batch_masked_patches, batch_indeces_masked_patches = masker(batch_ecg_data.detach().clone())
             batch_age = torch.Tensor(batch_age).cuda().to(dtype=torch.float) # (batch_size, 1)
             batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
             with torch.no_grad():
                 with autocast():
                     pred = model(batch_masked_patches, batch_age, batch_sex)
-                    loss, rec_patches, real_patches = loss_fn(pred, batch_patches, batch_indeces_masked_patches)
-                    example_patches.append(wandb.Image(visual_comparing(rec_patches, real_patches)))
+                    loss, rec_patches, real_patches = loss_fn(pred, batch_ecg_data, batch_indeces_masked_patches)
+                    wandb.log({"Examples of reconstruction" : visual_comparing(rec_patches, real_patches, unfolded_shape)}) #logging examples of reconstructed patches
             
 
         losses.append(loss.item())
@@ -129,5 +133,5 @@ def test_self_supervised(test_dataloader, model, loss_fn, *metrics):
     logger.success("\t End of testing. General loss: ", test_loss)
 
     if isinstance(loss_fn, PatchRecLoss):
-        wandb.log({"test_loss" : test_loss, "Examples" : example_patches})
+        wandb.log({"test_loss" : test_loss})
         return (test_loss, ) #test loss 
