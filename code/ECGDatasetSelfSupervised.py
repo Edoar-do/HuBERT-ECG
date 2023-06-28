@@ -18,8 +18,8 @@ class ECGDatasetSelfSupervised(Dataset):
         
         #take only 10% of the dataset for fast training
         #return to the original length after the exploration phase
-        if reduced:
-            self.dataframe = self.dataframe.head(int(0.1*len(self.dataframe)))                                             
+        if reduced:            
+            self.ecg_dataframe = self.ecg_dataframe.iloc[:int(0.1*self.ecg_dataframe.__len__())]                                            
                                              
         self.ecg_dir_path = ecg_dir_path # something like "./***_self_supevised", *** in {train, val, test}
 
@@ -44,11 +44,14 @@ class ECGDatasetSelfSupervised(Dataset):
 
         ecg_path = os.path.join(self.ecg_dir_path, ecg_filename)
         
-        try:
-            ecg_data = np.load(ecg_path)
-        except ValueError as e:
-            logger.error(ecg_path)
-            return np.nan, age, sex
+        ecg_data = np.load(ecg_path)
+        ecg_data = ecg_data[:, :5000] 
+        
+        # try:
+        #     ecg_data = np.load(ecg_path)
+        # except ValueError as e:
+        #     logger.error(ecg_path)
+        #     return np.nan, age, sex
 		
         
         #takes samples alternated in time --> half the samples and less memory usage and faster training
@@ -56,4 +59,4 @@ class ECGDatasetSelfSupervised(Dataset):
         if self.reduced:
             return torch.from_numpy(ecg_data[:, ::2]), age, sex
         else:
-            return torch.from_numpy(ecg_data[:, :5000]), age, sex
+            return torch.from_numpy(ecg_data), age, sex

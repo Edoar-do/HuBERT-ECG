@@ -11,19 +11,13 @@ from torch.cuda.amp import autocast, GradScaler
 from Losses import PatchRecLoss
 from loguru import logger
 
-global configs 
-global patience_count
-global best_val_loss
-
-global patcher
-global masker
-
-def validate_supervised(val_dataloader, model, loss_fn, *metrics):
+def validate_supervised(val_dataloader, model, loss_fn, patcher, *metrics):
     '''Validate a `model` in a supervised fashion once per epoch using data fetched by `val_dataloader` according to `loss_fn` function and any additional `metric`.
     Params:
         - `val_dataloader`: instance of torch.utils.data.DataLoader that fetches data from validation set
         - `model`: the model to validate
         - `loss_fn`: the loss function to validate the model on
+        - `patcher`: instance of Patcher class to patchify the input data
         - `metrics`: any additional metrics to validate the model on
     Returns:
         - validation loss for the epoch
@@ -49,8 +43,8 @@ def validate_supervised(val_dataloader, model, loss_fn, *metrics):
 
         # normalize age
 
-        batch_age = torch.Tensor((batch_age - age_min)/(age_max - age_min), dtype=torch.float).cuda() # normalized age, (batch_size, 1)
-        batch_sex = torch.Tensor(batch_sex, dtype=torch.float).cuda()# (batch_size, 1)
+        batch_age = torch.Tensor((batch_age - age_min)/(age_max - age_min)).cuda().to(dtype=torch.float) # normalized age, (batch_size, 1)
+        batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float)# (batch_size, 1)
 
         batch_labels = torch.stack(batch_labels, dim=0).cuda().to(dtype=torch.float)
 
@@ -66,15 +60,17 @@ def validate_supervised(val_dataloader, model, loss_fn, *metrics):
         epoch_losses.append(loss.item())
 
     val_loss = np.mean(epoch_losses)
-    wandb.log({"val_loss" : val_loss})
+    # wandb.log({"val_loss" : val_loss}) # redundant, already done in train 
     return val_loss, epoch_lbls, epoch_probs #validation loss for a given epoch, labels and probs for a given epoch
 
-def validate_self_supervised(val_dataloader, model, loss_fn, *metrics):
+def validate_self_supervised(val_dataloader, model, loss_fn, patcher, masker, *metrics):
     '''Validate a `model` in a self_supervised fashion once per epoch using data fetched by `val_dataloader` according to `loss_fn` function and any additional `metric`.
     Params:
         - `val_dataloader`: instance of torch.utils.data.DataLoader that fetches data from validation set
         - `model`: the model to validate
         - `loss_fn`: the loss function to validate the model on
+        - `patcher`: instance of Patcher class to patchify the input data
+        - `masker`: instance of Masker class to apply masking to patches
         - `metrics`: any additional metrics to validate the model on
     Returns:
         - validation loss for the epoch
@@ -98,8 +94,8 @@ def validate_self_supervised(val_dataloader, model, loss_fn, *metrics):
 
         if isinstance(loss_fn, PatchRecLoss):
             batch_masked_patches, batch_indeces_masked_patches = masker(batch_patches.detach().clone())
-            batch_age = torch.Tensor(batch_age, dtype=torch.float).cuda() # (batch_size, 1)
-            batch_sex = torch.Tensor(batch_sex, dtype=torch.float).cuda() # (batch_size, 1)
+            batch_age = torch.Tensor(batch_age).cuda().to(dtype=torch.float) # (batch_size, 1)
+            batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
             with torch.no_grad():
                 with autocast():
                     pred = model(batch_masked_patches, batch_age, batch_sex)
@@ -109,10 +105,10 @@ def validate_self_supervised(val_dataloader, model, loss_fn, *metrics):
 
     val_loss = np.mean(epoch_losses)
     if isinstance(loss_fn, PatchRecLoss):
-        wandb.log({"val_loss" : val_loss})
+        # wandb.log({"val_loss" : val_loss}) # redundant log, already done in train method
         return np.mean(epoch_losses) #validation loss for a given epoch
 
-def save_model_modules(model, optimizer, path, model_name):
+def save_model_modules(model, optimizer, path, model_name, configs):
     if configs['distributed']:
         torch.save({
             'optimizer': optimizer.state_dict(),
@@ -178,11 +174,11 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
             batch_ecg_data, batch_age, batch_sex, batch_labels = tuple(zip(*batch)) #return tuple of patches, tuple of ages, tuple of sexes, tuple of labels; each bs instances long       
 
 
-            batch_age = torch.Tensor((batch_age - age_min)/(age_max - age_min), dtype=torch.float).cuda() # normalized age, (batch_size, 1)
-            batch_sex = torch.Tensor(batch_sex, dtype=torch.float).cuda() # (batch_size, 1)
+            batch_age = torch.Tensor((batch_age - age_min)/(age_max - age_min)).cuda().to(dtype=torch.float) # normalized age, (batch_size, 1)
+            batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
 
-            batch_ecg_data = torch.stack(batch_ecg_data, dim=0, dtype=torch.float).cuda()
-            batch_labels = torch.stack(batch_labels, dim=0, dtype=torch.float).cuda()
+            batch_ecg_data = torch.stack(batch_ecg_data, dim=0).cuda().to(dtype=torch.float)
+            batch_labels = torch.stack(batch_labels, dim=0).cuda().to(dtype=torch.float)
 
             batch_patches = patcher(batch_ecg_data) # (batch_size, 12, 5000)
 
@@ -222,7 +218,7 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
                 best_val_loss = epoch_val_loss
                 patience_count = 0
                 if save_model and model_name is not None:
-                    save_model_modules(model, optimizer, "./models/checkpoints/supervised/", model_name)
+                    save_model_modules(model, optimizer, "./models/checkpoints/supervised/", model_name, configs)
             else: #not improving
                 patience_count += 1
                 if patience_count >= patience:
@@ -261,8 +257,8 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
     best_val_loss = np.inf #global var initialized here, once and forever
     scaler = GradScaler()
 
-    patcher = Patcher((configs['patch_height'], configs['patch_width'])).cuda() #global var initialized here, once and forever
-    masker = Masker(configs['mask_token'], configs['mask_perc']).cuda() #global var initialized here, once and forever
+    patcher = Patcher((configs['patch_height'], configs['patch_width'])).cuda()
+    masker = Masker(configs['mask_token'], configs['mask_perc']).cuda() 
 
     
     for i in range(epochs):
@@ -279,8 +275,8 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
 
             #batch_age and batch_sex are tuples of nan. Don't care though, they are not used in the self_supervised training
 
-            batch_age = torch.Tensor(batch_age, dtype=torch.float).cuda() # (batch_size, 1)
-            batch_sex = torch.Tensor(batch_sex, dtype=torch.float).cuda() # (batch_size, 1)
+            batch_age = torch.Tensor(batch_age).cuda().to(dtype=torch.float) # (batch_size, 1)
+            batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
 
             # batch_ecg_data is a tuple of torch.Tensor (12, 5000) batch_size long
             batch_ecg_data = torch.stack(batch_ecg_data, dim=0).cuda().to(dtype=torch.float)
@@ -293,6 +289,9 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
 
             assert batch_patches.shape == batch_masked_patches.shape
             assert batch_patches.shape[0] == len(batch_indeces_masked_patches)
+            
+            #assert that batch_patches are different from batch_masked_patches to see if masker is working
+            assert not torch.all(torch.eq(batch_patches, batch_masked_patches))
 
             # compute prediction and loss
             with autocast():
@@ -313,7 +312,7 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
         #validation
         if configs['distributed']:
             val_dataloader.sampler.set_epoch(i)
-        epoch_val_loss = validate_self_supervised(val_dataloader, model, rec_loss_fn)
+        epoch_val_loss = validate_self_supervised(val_dataloader, model, rec_loss_fn, patcher, masker)
         validation_loss.append(epoch_val_loss)
 
         logger.success(f"Training loss: {training_loss[-1]} - Validation loss: {validation_loss[-1]}")
@@ -326,7 +325,7 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
                 best_val_loss = epoch_val_loss
                 patience_count = 0
                 if save_model and model_name is not None:
-                    save_model_modules(model, optimizer, "./models/checkpoints/self-supervised/", model_name)
+                    save_model_modules(model, optimizer, "./models/checkpoints/self-supervised/", model_name, configs)
             else: #not improving
                 patience_count += 1
                 if patience_count >= patience:

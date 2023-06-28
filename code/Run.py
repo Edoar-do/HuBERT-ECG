@@ -12,7 +12,7 @@ import os
 from torch import nn
 import numpy as np
 from Optimizer import NoamOpt
-from Training import train_self_supervised
+from Train import train_self_supervised
 from Test import test_self_supervised
 from Losses import PatchRecLoss
 
@@ -83,17 +83,17 @@ if torch.cuda.is_available():
 
 logger.info("creating datasets for self-supervised pre-training...")
 
-train_set = ECGDatasetSelfSupervised("./train_self_supervised_processed.csv", "./train_self_supervised", reduce=True)
-val_set = ECGDatasetSelfSupervised("./val_self_supervised_processed.csv", "./val_self_supervised", reduce=True)
-test_set = ECGDatasetSelfSupervised("./test_self_supervised_processed.csv", "./test_self_supervised", reduce=True)
+train_set = ECGDatasetSelfSupervised("./train_self_supervised_processed.csv", "./train_self_supervised", reduced=True)
+val_set = ECGDatasetSelfSupervised("./val_self_supervised_processed.csv", "./val_self_supervised", reduced=True)
+test_set = ECGDatasetSelfSupervised("./test_self_supervised_processed.csv", "./test_self_supervised", reduced=True)
 
 logger.info("creating dataloaders to generata batches...")
 
 # no shuffle if configs["distributed"]
 train_dl = DataLoader(train_set, batch_size=configs['batch_size'], shuffle=(not configs["distributed"]),
-                      collate_fn=lambda x: x, num_workers=configs["num_workers"], sampler=(DistributedSampler(train_set) if distributed else None))
+                      collate_fn=lambda x: x, num_workers=configs["num_workers"], sampler=(DistributedSampler(train_set) if configs["distributed"] else None))
 val_dl = DataLoader(val_set, batch_size=configs['batch_size'], shuffle=(not configs["distributed"]),
-                    collate_fn=lambda x: x, num_workers=configs["num_workers"], sampler=(DistributedSampler(val_set) if distributed else None))
+                    collate_fn=lambda x: x, num_workers=configs["num_workers"], sampler=(DistributedSampler(val_set) if configs["distributed"] else None))
 test_dl = DataLoader(test_set, batch_size=configs['batch_size'], shuffle=True, collate_fn=lambda x: x, num_workers=configs["num_workers"])
 
 

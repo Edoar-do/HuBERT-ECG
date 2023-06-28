@@ -246,7 +246,8 @@ def create_supervised_processed_dataset(path_to_csv_supervised_dataset):
     physio_regex = r'^[A-Z]+\d+'
     
     for idx, row in dataframe.iterrows():
-        
+        if idx % 100 == 0:
+		print(f"Processed files untill index {idx}")
         filename = row['filename']        
 
         if '/' not in filename and re.match(physio_regex, filename): #from Physio 

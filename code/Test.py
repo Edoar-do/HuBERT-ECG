@@ -61,8 +61,8 @@ def test_supervised(test_dataloader, model, loss_fn, *metrics):
         batch_patches = patcher(batch_patches)
         #normalize age
 
-        batch_age = torch.Tensor((batch_age - age_min)/(age_max - age_min), dtype=torch.float).cuda() # normalized age, (batch_size, 1)
-        batch_sex = torch.Tensor(batch_sex, dtype=torch.float).cuda()# (batch_size, 1)
+        batch_age = torch.Tensor((batch_age - age_min)/(age_max - age_min)).cuda().to(dtype=torch.float) # normalized age, (batch_size, 1)
+        batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float)# (batch_size, 1)
         with torch.no_grad():
             batch_labels = torch.stack(batch_labels, dim=0).cuda().to(dtype=torch.float)
             pred = model(batch_patches, batch_age, batch_sex)
@@ -113,8 +113,8 @@ def test_self_supervised(test_dataloader, model, loss_fn, *metrics):
 
         if isinstance(loss_fn, PatchRecLoss):
             batch_masked_patches, batch_indeces_masked_patches = masker(batch_patches.detach().clone())
-            batch_age = torch.Tensor(batch_age, dtype=torch.float).cuda() # (batch_size, 1)
-            batch_sex = torch.Tensor(batch_sex, dtype=torch.float).cuda() # (batch_size, 1)
+            batch_age = torch.Tensor(batch_age).cuda().to(dtype=torch.float) # (batch_size, 1)
+            batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
             with torch.no_grad():
                 with autocast():
                     pred = model(batch_masked_patches, batch_age, batch_sex)
