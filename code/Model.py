@@ -5,7 +5,7 @@ import math
 import numpy as np
 from torch.cuda.amp import autocast
 
-###<----- Start of encoding stack ----->###
+### <---- patcher and masker ---> ###
 
 class Patcher(nn.Module):
     def __init__(self, patch_size : tuple):
@@ -28,8 +28,9 @@ class Masker(nn.Module):
         self.mask_token = mask_token
         self.mask_perc = mask_perc
 
+    #todo: this function could be optimized and made more efficient, more vectorial
     def masking(self, batch_patches : torch.Tensor, mask_token):
-        batch_mask_indexer = np.random.choice([True, False], size=batch_patches.shape[0], p=[0.85, .15])       
+        batch_mask_indexer = np.random.choice([True, False], size=batch_patches.shape[0], p=[0.8, 0.2])       
         batch_indeces = []
         for b, to_be_masked in enumerate(batch_mask_indexer):
             if to_be_masked: #some patches of the b instance will probably be masked
@@ -49,6 +50,7 @@ class Masker(nn.Module):
         #plus list bs long containing lists of indeces of patches that have been masked per instance
         return self.masking(batch_patches, self.mask_token)
 
+###<----- Start of encoding stack ----->###
 
 class SimpleLinearEmbedder(nn.Module):
     ''' Simple linear projector as embedder of the ECG patches. Like ViTs.
@@ -103,11 +105,12 @@ class ConvEmbedder(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(256, n_patches, self.kernels[1], self.strides[1], padding=0),
             nn.BatchNorm2d(n_patches),
-            nn.ReLU(inplace=True)).cuda()
+            nn.ReLU(inplace=True))
         
         self.linear_projection = nn.Linear(self.get_output_shape(), embedding_size, bias=False)
+        
         # remove conv_embedder from device
-        self.conv_embedder.cpu()
+        # self.conv_embedder.cpu()
 
     def get_output_shape(self):
         #get output shape of conv_embedder from a random tensor with shape (bs, n_patches, patch_height, patch_width)
@@ -249,12 +252,12 @@ class FullyConvDecoder(nn.Module):
             nn.ConvTranspose2d(n_patches, n_patches, kernel_size=3, stride=2),
             nn.BatchNorm2d(n_patches),
             nn.ReLU(inplace=True)
-        ).cuda()
+        )
 
         self.w_proj = nn.Linear(self.get_output_shape()[0], patch_width, bias=False)
         self.h_proj = nn.Linear(self.get_output_shape()[1], patch_height, bias=False)
 
-        self.conv_decoder.cpu()
+        # self.conv_decoder.cpu()
 
     def get_output_shape(self):
         x = torch.randn(1, self.n_patches, self.d_model).cuda().to(non_blocking=True)
@@ -442,15 +445,16 @@ class FullModel(nn.Module):
             self.decoder = MirroredDecoder(d_model, n_encoding_layers//2, p_dropout, dim_ff, n_heads, embedding_type, patch_height, patch_width, n_patches)
         elif decoding_type == 'nar':
             self.decoder = NonAutoregressiveTransformerDecoder(d_model, n_patches, n_encoding_layers, p_dropout, dim_ff, n_heads, patch_height, patch_width)
-        elif decoding_type == 'encoder':
-            # TODO: transformer encoder used as decoder as in paper "Spatiotemporal self-supervised representation learning for multi-lead ECG signals"
-            pass
+        elif decoding_type == 'enc':
+            self.decoder = TransfomerEncoder(d_model, n_heads//2, dim_ff, p_dropout, n_encoding_layers//2)
+            self.lin1 = nn.Linear(d_model, patch_width, bias=False)
+            self.lin2 = nn.Linear(1, patch_height, bias=False)
 
     @autocast()
     def forward(self, x, age, sex):
         embedding = self.embedder(x)
         pos_embedding = self.pe(embedding)
-        cls = torch.zeros((pos_embedding.shape[0], 1, self.d_model)).cuda()
+        cls = torch.ones((pos_embedding.shape[0], 1, self.d_model)).cuda()
         pos_embedding_plus_cls = torch.cat([cls, pos_embedding], dim=1)
         transfomer_encoding = self.transformer_encoder(pos_embedding_plus_cls)
         
@@ -458,6 +462,13 @@ class FullModel(nn.Module):
             out = self.decoder(transfomer_encoding[:, 0, :], age, sex) #pass vector of shape (batch_size, 1, d_model), (batch_size, 1), (batch_size, 1)
         elif self.decoding_type == 'nar':
             out = self.decoder(transfomer_encoding[:, 1:, :], pos_embedding) #pass vector of shape (batch_size, n_patches, d_model), (batch_size, n_patches, d_model)
+        elif self.decoding_type == 'enc':
+            out = self.decoder(transfomer_encoding[:, 1:, :]) #vector of shape (batch_size, n_patches, d_model)
+            out = out.unsqueeze(2) # (batch_size, n_patches, 1, d_model)
+            out = self.lin1(out) # (batch_size, n_patches, 1, patch_width)
+            out = out.permute(0, 1, 3, 2)
+            out = self.lin2(out) # (batch_size, n_patches, patch_width, patch_height)
+            out = out.permute(0, 1, 3, 2)
         else: #decode/reconstruct all encodings except the cls token
             out = self.decoder(transfomer_encoding[:, 1:, :]) #vector of shape (batch_size, n_patches, patch_height, patch_width)
         return out

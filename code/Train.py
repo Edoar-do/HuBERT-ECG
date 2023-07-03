@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import wandb
 import numpy as np
 from Model import FullModel, Patcher, Masker
-from Configs import get_configs
 from torch.cuda.amp import autocast, GradScaler
 from Losses import PatchRecLoss
 from loguru import logger
@@ -120,7 +119,7 @@ def save_model_modules(model, optimizer, path, model_name, configs):
             'model': model.state_dict(),
         }, path + model_name + "_full_model.pth")  
 
-def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val_dataloader, early_stopping=False, patience=5, save_model=False, model_name=None, *metrics):
+def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val_dataloader, configs, early_stopping=False, patience=5, save_model=False, model_name=None, *metrics):
     ''' Train a `model` passed as parameter in a supervised fashion for `epochs` epochs, using data provided by a `train_dataloader`.
     The evaluation throughout training is done using data provided by a `val_dataloader` and can take into account additional `metrics`.
     Params:
@@ -138,8 +137,6 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
         - training loss (list[float])
         - validation loss (list[float])
     '''
-    
-    configs = get_configs("./ECG_pretraining/code/configs.json")
     
     patcher = Patcher((configs['patch_height'], configs['patch_width'])).cuda()
 
@@ -159,6 +156,8 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
     model.train()
     
     scaler = GradScaler()
+    
+    wandb.watch(model, bce_loss_fn, log="all", log_freq=10)
 
     for i in range(epochs):
         epoch_losses = []
@@ -218,7 +217,7 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
                 best_val_loss = epoch_val_loss
                 patience_count = 0
                 if save_model and model_name is not None:
-                    save_model_modules(model, optimizer, "./models/checkpoints/supervised/", model_name, configs)
+                    save_model_modules(model, optimizer.optimizer, "./ECG_pretraining/models/checkpoints/supervised/", model_name, configs)
             else: #not improving
                 patience_count += 1
                 if patience_count >= patience:
@@ -229,7 +228,7 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
     wandb.log({"training_loss": training_loss, "validation_loss": validation_loss})
     return training_loss, training_lbls_probs, validation_loss, validation_lbls_probs
 
-def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_dataloader, early_stopping=False, patience=5, save_model=False, model_name=None, *metrics):
+def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_dataloader, configs, early_stopping=False, patience=5, save_model=False, model_name=None, *metrics):
     ''' Train a `model` passed as parameter in a self-supervised fashion for `epochs` epochs, using data provided by a `train_dataloader`.
     The evaluation throughout training is done using data provided by a `val_dataloader` and can take into account additional `metrics`.
     Params:
@@ -248,18 +247,19 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
         - validation loss (list[float])
     '''
 
-    configs = get_configs("./ECG_pretraining/code/configs.json") #global var initialized here, once and forever
-
     rec_loss_fn = PatchRecLoss(loss_type='mse')    
     training_loss = []
     validation_loss = []
     patience_count = 0 #global var initialized here, once and forever
     best_val_loss = np.inf #global var initialized here, once and forever
     scaler = GradScaler()
+    
+    mask_token = torch.Tensor([([-1] * (configs['patch_width']//2)) + ([1] * (configs['patch_width']//2))] * configs['patch_height']).to(dtype=torch.float).cuda()
 
     patcher = Patcher((configs['patch_height'], configs['patch_width'])).cuda()
-    masker = Masker(configs['mask_token'], configs['mask_perc']).cuda() 
+    masker = Masker(mask_token, configs['mask_perc']).cuda() 
 
+    wandb.watch(model, rec_loss_fn, log="all", log_freq=10)
     
     for i in range(epochs):
         epoch_losses = []
@@ -325,7 +325,7 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
                 best_val_loss = epoch_val_loss
                 patience_count = 0
                 if save_model and model_name is not None:
-                    save_model_modules(model, optimizer, "./models/checkpoints/self-supervised/", model_name, configs)
+                    save_model_modules(model, optimizer.optimizer, "./ECG_pretraining/models/checkpoints/self-supervised/", model_name, configs)
             else: #not improving
                 patience_count += 1
                 if patience_count >= patience:

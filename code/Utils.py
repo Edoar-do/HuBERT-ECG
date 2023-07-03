@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from sklearn.model_selection import train_test_split
-from torch.distributed import init_process_group, destroy_process_group
+import torch.distributed as dist
 import torch
 import numpy as np
 from scipy.io import loadmat
@@ -10,16 +10,6 @@ from biosppy.signals.tools import filter_signal
 import re
 import wfdb
 import glob
-
-def ddp_setup(rank: int, world_size: int):
-    ''' Args:
-        rank: unique id of each process
-        world_size: total number of processes
-    '''
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'
-    init_process_group(backend="nccl", rank=rank, world_size=world_size)
-    torch.cuda.set_device(rank)
 
 def create_hierarchical_dataset(dataset_path, groups):
     '''Creates a hierarchical dataset from a dataset in csv format.

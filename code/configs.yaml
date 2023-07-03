@@ -1,0 +1,107 @@
+program: Run.py
+method: bayes
+metric:
+  goal: minimize
+  name: validation_loss
+parameters:
+  patch_height:
+    distribution: categorical
+    values:
+    - 1
+    - 2
+    - 3
+    - 6
+  patch_width:
+    distribution: categorical
+    values:
+    - 250
+    - 500
+  mask_perc:
+    distribution: uniform
+    min: 0.15
+    max: 0.75
+  d_model:
+    distribution: categorical
+    values:
+    - 64
+    - 128
+    - 256
+    - 512
+  epochs:
+    distribution: categorical
+    values:
+    - 5
+    - 10
+    - 20
+    - 25
+  n_encoder_layers:
+    distribution: int_uniform
+    min: 2
+    max: 8
+  n_heads:
+    distribution: categorical
+    values:
+    - 2
+    - 4
+    - 8
+  dim_ff:
+    distribution: categorical
+    values:
+    - 64
+    - 128
+    - 256
+    - 512
+  hidden_dim: #for MLP classifier in supervised training
+    distribution: categorical
+    values:
+    - 64
+    - 128
+    - 256
+    - 512
+  pos_enc_type:
+    distribution: categorical
+    values:
+    - 1d
+    - 2d
+  decoding_type:
+    distribution: categorical
+    values:
+    - nar
+    - enc
+    - fcn
+  distributed:
+    distribution: constant
+    value: False
+  num_workers:
+    distribution: constant
+    value: 4
+  warmup:
+    distribution: int_uniform
+    min: 1000
+    max: 10000
+  n_leads:
+    distribution: constant
+    value: 12
+  window:
+    distribution: constant
+    value: 2500
+  reduced: # if True, then reduce size of datasets
+    distribution: constant
+    value: True
+  n_classes:
+    distribution: constant
+    value: 9
+  batch_size:
+    distribution: constant
+    value: 1024
+  patience:
+    distribution: constant
+    value: 10
+  early_stopping:
+    distribution: constant
+    value: True
+  embedder_type:
+    distribution: categorical
+    values:
+    - conv
+    - linear

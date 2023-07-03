@@ -11,8 +11,9 @@ from Losses import PatchRecLoss
 from loguru import logger
 
 
-def visual_comparing(rec_patches, real_patches, unfolded_shape):
-    '''Returns a figure showing the `reconstructed patches` and `real_patches` after their folding to original size'''
+def visual_comparing(rec_patches, real_patches, unfolded_shape, masked_patches_indeces):
+    '''Returns a figure showing the `reconstructed patches` and `real_patches` after their folding to original size.
+    The figure highlights which parts of the original signal have been masked'''
     bs, res_height, res_width, patch_height, patch_width = unfolded_shape
     rec_patches = rec_patches.view(unfolded_shape)
     original_h = res_height * patch_height
@@ -24,10 +25,18 @@ def visual_comparing(rec_patches, real_patches, unfolded_shape):
     
     #subplots with original_h rows and 1 column. Each subplos shows the reconstructed lead and the real lead
     fig, axs = plt.subplots(original_h, 1, figsize=(20, 20), sharex=True)
+    time_span = np.arange(0, original_w)
     for lead in range(original_h):
-        axs[lead].plot(rec_patches[0, lead, :], label="reconstructed")
-        axs[lead].plot(real_patches[0, lead, :], label="real")
+        axs[lead].plot(time_span, rec_patches[0, lead, :], label="reconstructed")
+        axs[lead].plot(time_span, real_patches[0, lead, :], label="real")
     
+    #color the regions corresponding to masked patches
+    for idx in masked_patches_indeces:
+        start = idx * patch_width
+        end = (idx+1) * patch_width
+        lead = end // original_w
+        axs[lead] = plt.fill_between(time_span[start:end], rec_patches[0, lead, start:end], alpha = 0.5)
+        
     plt.legend()
     return fig
 
@@ -84,7 +93,7 @@ def test_supervised(test_dataloader, model, loss_fn, *metrics):
     wandb.log({"test_loss" : test_loss})
     return test_loss, lbls, probs #validation loss for a given epoch, labels and probs
 
-def test_self_supervised(test_dataloader, model, loss_fn, *metrics):
+def test_self_supervised(test_dataloader, model, loss_fn, configs, *metrics):
     '''
     Test `model` performance on data retrieved by `test_dataloader` in a self-supervised fashion.
     Performance are measure according to `loss_fn` and additional `metrics`.
@@ -97,10 +106,11 @@ def test_self_supervised(test_dataloader, model, loss_fn, *metrics):
         - test_loss
     '''
     
-    configs = get_configs("./ECG_pretraining/code/configs.json")
+    mask_token = torch.Tensor([([-1] * (configs['patch_width']//2)) + ([1] * (configs['patch_width']//2))] * configs['patch_height']).to(dtype=torch.float).cuda()
+
 
     patcher = Patcher((configs['patch_height'], configs['patch_width'])).cuda() 
-    masker = Masker(configs['mask_token'], configs['mask_perc']).cuda() 
+    masker = Masker(mask_token, configs['mask_perc']).cuda() 
 
     
     model.eval()
@@ -123,7 +133,7 @@ def test_self_supervised(test_dataloader, model, loss_fn, *metrics):
                 with autocast():
                     pred = model(batch_masked_patches, batch_age, batch_sex)
                     loss, rec_patches, real_patches = loss_fn(pred, batch_ecg_data, batch_indeces_masked_patches)
-                    wandb.log({"Examples of reconstruction" : visual_comparing(rec_patches, real_patches, unfolded_shape)}) #logging examples of reconstructed patches
+                    wandb.log({"Examples of reconstruction" : visual_comparing(rec_patches, real_patches, unfolded_shape, batch_indeces_masked_patches[0])}) #logging examples of reconstructed patches
             
 
         losses.append(loss.item())

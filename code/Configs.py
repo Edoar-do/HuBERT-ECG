@@ -1,7 +1,21 @@
 # Configs.py
 
-import json
+import yaml
 import torch
+import loguru
+
+
+def get_configs_from_yaml(path_to_configs_yaml):
+    if path_to_configs_yaml is None or not path_to_configs_yaml.endswith('.yaml'):
+        loguru.logger.error("Invalid path to configs yaml file")
+    with open(path_to_configs_yaml, 'r') as file:
+        configs = yaml.safe_load(file) #configs is a dictionary
+        
+    # configs['n_patches'] = configs['n_leads'].value * configs['window'].value // (configs['patch_height'] * configs['patch_width'])
+    # patch_size = (configs['patch_height'], configs['patch_width'])
+    # configs['mask_token'] = torch.Tensor([([-1] * (patch_size[1]//2)) + ([1] * (patch_size[1]//2))] * patch_size[0]).to(dtype=torch.float).cuda()
+    # configs['patch_size'] = patch_size
+    return configs
 
 def get_configs(path_to_configs_json):
     configs = json.load(open(path_to_configs_json))
@@ -10,6 +24,16 @@ def get_configs(path_to_configs_json):
     configs['mask_token'] = torch.Tensor([([-1] * (patch_size[1]//2)) + ([1] * (patch_size[1]//2))] * patch_size[0]).to(dtype=torch.float).cuda()
     configs['patch_size'] = patch_size
     return configs
+
+def setup(rank: int, world_size: int):
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12355'
+
+    # initialize the process group
+    dist.init_process_group("gloo", rank=rank, world_size=world_size)
+
+def cleanup():
+    dist.destroy_process_group()
 
 # group0 = ['NSR']
 # group1 = ['AAR', 'AED', 'ARH']
