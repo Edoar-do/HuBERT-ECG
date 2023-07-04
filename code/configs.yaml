@@ -30,7 +30,6 @@ parameters:
   epochs:
     distribution: categorical
     values:
-    - 5
     - 10
     - 20
     - 25

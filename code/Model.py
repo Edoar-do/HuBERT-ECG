@@ -21,7 +21,6 @@ class Patcher(nn.Module):
         out = ecg_data.unfold(1, self.h, self.h).unfold(2, self.w, self.w)
         return out.reshape(bs, -1, self.h, self.w), out.shape
 
-
 class Masker(nn.Module):
     def __init__(self, mask_token, mask_perc):
         super(Masker, self).__init__()
@@ -78,6 +77,7 @@ class ConvEmbedder(nn.Module):
         self.patch_width = patch_width
         self.embedding_size = embedding_size
         self.name = 'convolutional embedder'
+        #start with larger kernels and strides, then decrease them to capture finer features
         if patch_height == 1:
             self.kernels = [(1, 14), (1, 10)]
             self.strides = [2, 1]
@@ -94,10 +94,10 @@ class ConvEmbedder(nn.Module):
             nn.Conv2d(64, 128, self.kernels[0], self.strides[0], padding=2),
             nn.BatchNorm2d(128),
             nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, self.kernels[1], self.strides[0], padding=0),
+            nn.Conv2d(128, 256, self.kernels[1], self.strides[1], padding=0),
             nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, self.kernels[1], self.strides[0], padding=0),
+            nn.Conv2d(256, 256, self.kernels[1], self.strides[1], padding=0),
             nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
             nn.Conv2d(256, 256, self.kernels[1], self.strides[1], padding=0),
@@ -116,7 +116,7 @@ class ConvEmbedder(nn.Module):
         #get output shape of conv_embedder from a random tensor with shape (bs, n_patches, patch_height, patch_width)
         #this method is called only once in the init methhod, which is called only once in the whole training process, i.e. when the model is created
         bs = 1
-        x = torch.rand((bs, self.n_patches, self.patch_height, self.patch_width)).cuda().to(non_blocking=True)
+        x = torch.rand((bs, self.n_patches, self.patch_height, self.patch_width)).to(non_blocking=True)
         x = self.conv_embedder(x)
         x.detach().cpu()
         
@@ -144,9 +144,9 @@ class PositionalEncoding1D(nn.Module):
         self.pe = pe
 
     def forward(self, x):
-        #x has shape (batch_size, n_patches+1, d_model)
+        #x has shape (batch_size, n_patches, d_model)
         x = x + self.pe.cuda().to(non_blocking=True)
-        return self.dropout(x) #exits (batch_size, n_patches+1, d_model)
+        return self.dropout(x) #exits (batch_size, n_patches, d_model)
     
 class PositionalEncoding2D(nn.Module):
     def __init__(self, d_model, n_patches, p_dropout, max_length = 5000, learnable = False):
@@ -189,42 +189,94 @@ class TransfomerEncoder(nn.Module):
     
 ###<----- End of encoding stakck ----->###
     
-###<----- Start of decoding stack ---->###    
-class ReversedEncoderLayer(nn.Module):
-    ''' Reversed encoder layer'''
-    def __init__(self, d_model, p_dropout, dim_ff, n_heads):
-        super(ReversedEncoderLayer, self).__init__()
-        self.ff = nn.Sequential(
-            nn.Linear(d_model, dim_ff),
-            nn.Linear(dim_ff, d_model),
-            nn.ReLU())
-        self.self_attention = nn.MultiheadAttention(d_model, n_heads, p_dropout, batch_first=True)
-        self.norm1 = nn.LayerNorm(d_model)
-        self.norm2 = nn.LayerNorm(d_model)
-        self.dropout = nn.Dropout(p_dropout)
-        self.name = 'reversed encoder layer'
+###<----- Start of decoding stack ---->###
 
-    def forward(self, x):
-        #x has shape (batch_size, n_patches, d_model)
-        #add & norm --> feed forward --> add & norm --> self attention
-        x = self.norm1(x + self.dropout(x))
-        x = self.ff(x) 
-        x = self.norm2(x + self.dropout(x))
-        x, attn_weights = self.self_attention(x, x, x)
-        return x #exits (batch_size, n_patches, d_model)
-
-class ReversedTransformerEncoder(nn.Module):
-    def __init__(self, n_layers, d_model, p_dropout, dim_ff, n_heads):
-        super(ReversedTransformerEncoder, self).__init__()
-        self.n_layers = n_layers        
-        modules = nn.ModuleList([ReversedEncoderLayer(d_model, p_dropout, dim_ff, n_heads) for _ in range(n_layers)])
-        self.layers = nn.Sequential(*modules)
-        self.name = 'reversed transformer encoder'        
-    
-    def forward(self, x):
+class ReversedEncoderAsDecoder(nn.Module):
+    def __init__(self, d_model, p_dropout, dim_ff, n_heads, patch_height, patch_width, n_patches, n_decoding_layers, embedder_type, pe = None):
+        super(ReversedEncoderAsDecoder, self).__init__()
+        self.d_model = d_model
+        self.p_dropout = p_dropout
+        self.dim_ff = dim_ff
+        self.n_heads = n_heads
+        self.patch_height = patch_height
+        self.patch_width = patch_width
+        self.n_patches = n_patches
+        self.embedder_type = embedder_type
+        self.pe = pe #positional embedding from encoding stage that could help in reconstructing the patches
+        
+        self.decoder_layer = nn.TransformerEncoderLayer(
+            d_model = d_model,
+            nhead = n_heads,
+            dim_feedforward = dim_ff,
+            dropout = p_dropout
+        )
+        
+        self.decoder = nn.TransformerEncoder(self.decoder_layer, n_decoding_layers)
+  
+        if embedder_type == 'linear':
+            self.lin1 = nn.Linear(d_model, patch_width)
+            self.lin2 = nn.Linear(1, patch_height)            
+        elif embedder_type == 'conv':
+            if patch_height == 1:
+                self.kernels = [(1, 14), (1, 10)]
+                self.strides = [2, 1]
+            elif patch_height == 2 or patch_height == 3:
+                self.kernels = [(2, 14), (2, 10)]
+                self.strides = [(1, 2), (1, 1)]
+            elif patch_height == 4 or patch_height == 6:
+                self.kernels = [(3, 14), (3, 10)]
+                self.strides = [(1, 2), (1, 1)]
+            self.conv = nn.Sequential(
+                nn.ConvTranspose2d(n_patches, 256, self.kernels[1], self.strides[1], padding=0),
+                nn.BatchNorm2d(256),
+                nn.ReLU(inplace=True),
+                nn.ConvTranspose2d(256, 256, self.kernels[1], self.strides[1], padding=0),
+                nn.BatchNorm2d(256),
+                nn.ReLU(inplace=True),
+                nn.ConvTranspose2d(256, 256, self.kernels[1], self.strides[1], padding=0),
+                nn.BatchNorm2d(256),
+                nn.ReLU(inplace=True),
+                nn.ConvTranspose2d(256, 128, self.kernels[1], self.strides[1], padding=0),
+                nn.BatchNorm2d(128),
+                nn.ReLU(inplace=True),
+                nn.ConvTranspose2d(128, 64, self.kernels[0], self.strides[0], padding=2),
+                nn.BatchNorm2d(64),
+                nn.ReLU(inplace=True),
+                nn.ConvTranspose2d(64, n_patches, self.kernels[0], self.strides[0], padding=2),
+                nn.BatchNorm2d(n_patches),
+                nn.ReLU(inplace=True),
+            )
+            self.w_proj = nn.Linear(self.get_output_shape()[0], patch_width, bias=False)
+            self.h_proj = nn.Linear(self.get_output_shape()[1], patch_height, bias=False)
+            
+        self.name = "encoder as decoder"
+        
+    def get_output_shape(self):
+        x = torch.randn(1, self.n_patches, self.d_model).to(non_blocking=True)
+        x = x.unsqueeze(2) #adding height dim so to make deconv2d feasible
+        x = self.conv(x)
+        x.detach().cpu()
+        return x.shape[-1], x.shape[-2] #exits (conv_width, conv_height)        
+        
+    def forward(x):
         #takes (batch_size, n_patches, d_model)
-        return self.layers(x) #exits (batch_size, n_patches, d_model)
-
+        x = self.decoder(x) #(batch_size, n_patches, d_model)
+        if self.pe is not None:
+            x = x + self.pe
+        if self.embedder_type == 'linear':
+            x = x.unsqueeze(2) #(batch_size, n_patches, 1, d_model)
+            x = lin1(x) #(batch_size, n_patches, 1, patch_width)
+            x = x.permute(0, 1, 3, 2) #(batch_size, n_patches, patch_width, 1)
+            x = self.lin2(x) #(batch_size, n_patches, patch_width, patch_height)
+            x = x.permute(0, 1, 3, 2) #(batch_size, n_patches, patch_height, patch_width)
+        elif self.embedder_type == 'conv':
+            x = x.unsqueeze(2) #(batch_size, n_patches, 1, d_model)
+            x = self.conv(x) #(batch_size, n_patches, conv_height, conv_width)
+            x = self.w_proj(x) #(batch_size, n_patches, conv_height, patch_width)
+            x = x.permute(0, 1, 3, 2) #(batch_size, n_patches, patch_width, conv_height)
+            x = self.h_proj(x) #(batch_size, n_patches, patch_width, patch_height)
+            x = x.permute(0, 1, 3, 2) #(batch_size, n_patches, patch_height, patch_width)
+            
 class FullyConvDecoder(nn.Module):
     def __init__(self, n_patches, d_model, patch_height, patch_width):
         super(FullyConvDecoder, self).__init__()
@@ -260,7 +312,7 @@ class FullyConvDecoder(nn.Module):
         # self.conv_decoder.cpu()
 
     def get_output_shape(self):
-        x = torch.randn(1, self.n_patches, self.d_model).cuda().to(non_blocking=True)
+        x = torch.randn(1, self.n_patches, self.d_model).to(non_blocking=True)
         x = x.unsqueeze(2) #adding height dim so to make deconv2d feasible
         x = self.conv_decoder(x)
         x.detach().cpu()
@@ -299,40 +351,6 @@ class MLPClassifier(nn.Module):
         # sex = sex.to(x.device, non_blocking=True)
         x = torch.cat([x, age, sex], dim=1)
         return self.classifier(x) # (batch_size, n_classes), these are logits
-
-class MirroredDecoder(nn.Module):
-    def __init__(self, d_model, n_layers, p_dropout, dim_ff, n_heads, embeddying_type, patch_height, patch_width, n_patches):
-        super(MirroredDecoder, self).__init__()
-        self.d_model = d_model
-        self.n_layers = n_layers
-        self.p_dropout = p_dropout
-        self.dim_ff = dim_ff
-        self.n_heads = n_heads
-        self.embedding_type = embeddying_type
-        self.patch_height = patch_height
-        self.patch_width = patch_width
-        self.n_patches = n_patches
-        self.name = 'mirrored decoder'
-
-        self.reversed_encoder = ReversedTransformerEncoder(n_layers, d_model, p_dropout, dim_ff, n_heads)
-        if embeddying_type == 'linear':
-            self.lin1 = nn.Linear(d_model, patch_width, bias=False)
-            self.lin2 = nn.Linear(1, patch_height, bias=False)
-        if embeddying_type == 'conv':
-            self.conv_embed = FullyConvDecoder(n_patches, d_model, patch_height, patch_width)
-        
-    def forward(self, x):
-        # takes (batch_size, n_patches, d_model)
-        x = self.reversed_encoder(x)
-        if self.embedding_type == 'linear':
-            x = x.unsqueeze(2) # (batch_size, n_patches, 1, d_model)
-            x = self.lin1(x) # (batch_size, n_patches, 1, patch_width)
-            x = x.permute(0, 1, 3, 2) # (batch_size, n_patches, patch_width, 1)
-            x = self.lin2(x) # (batch_size, n_patches, patch_width, patch_height)
-            x = x.permute(0, 1, 3, 2) # (batch_size, n_patches, patch_height, patch_width)
-        elif self.embedding_type == 'conv':
-            x = self.conv_embed(x) # (batch_size, n_patches, patch_height, patch_width)
-        return x
 
 class NonAutoregressiveTransformerDecoderLayer(nn.Module):
     def __init__(self, d_model, p_dropout, n_heads, dim_ff):
@@ -388,15 +406,17 @@ class NonAutoregressiveTransformerDecoder(nn.Module):
         self.lin1 = nn.Linear(d_model, patch_width, bias=False)
         self.lin2 = nn.Linear(1, patch_height, bias=False)
 
-    def forward(self, encoder_output, pos_encodings):
+    def forward(self, encoder_output, x):
         # encoder_output is (batch_size, n_patches, d_model)
-        # pos_encodings is (batch_size, n_patches, d_model)
+        # x = pos_encodings is (batch_size, n_patches, d_model)
 
         for layer in self.layers:
-            encoder_output = layer(encoder_output, pos_encodings)
+            #encoder_output is a fixed input for each decoder's layer
+            #x is actually the positional encodings only the first iteration. From the second iteration on, it is the output of the previous decoder's layer
+            x = layer(encoder_output, x)
 
         # linear projections to get (batch_size, n_patches, patch_height, patch_width)
-        x = encoder_output.unsqueeze(2) # (batch_size, n_patches, 1, d_model)
+        x = x.unsqueeze(2) # (batch_size, n_patches, 1, d_model)
         x = self.lin1(x) # (batch_size, n_patches, 1, patch_width)
         x = x.permute(0, 1, 3, 2) # (batch_size, n_patches, patch_width, 1)
         x = self.lin2(x) # (batch_size, n_patches, patch_width, patch_height)
@@ -405,7 +425,7 @@ class NonAutoregressiveTransformerDecoder(nn.Module):
 
 class FullModel(nn.Module):
     def __init__(self, embedding_type, patch_height, patch_width, n_patches, d_model, learnable_pos_enc, p_dropout, n_heads,
-                 dim_ff, n_encoding_layers, decoding_type, pos_enc_type, hiddem_dim, n_classes):
+                 dim_ff, n_encoding_layers, decoding_type, pos_enc_type, hiddem_dim, n_classes, dim_ff_decoding, n_decoding_heads, n_decoding_layers):
         super(FullModel, self).__init__()
         self.embedding_type = embedding_type
         self.patch_height = patch_height
@@ -440,15 +460,10 @@ class FullModel(nn.Module):
             self.decoder = MLPClassifier(d_model, n_classes, p_dropout, hiddem_dim)
         elif decoding_type == 'fcn': # fully convolutional
             self.decoder = FullyConvDecoder(n_patches, d_model, patch_height, patch_width)
-        # NOTE: from now on using less layers to decode would be interesting to try
-        elif decoding_type == 'mirrored':
-            self.decoder = MirroredDecoder(d_model, n_encoding_layers//2, p_dropout, dim_ff, n_heads, embedding_type, patch_height, patch_width, n_patches)
+        elif decoding_type == 'rev':
+            self.decoder = ReversedEncoderAsDecoder(d_model, p_dropout, dim_ff_decoding, n_decoding_heads, patch_height, patch_width, n_patches, n_decoding_layers, embedding_type, pe = self.pe.pe)
         elif decoding_type == 'nar':
             self.decoder = NonAutoregressiveTransformerDecoder(d_model, n_patches, n_encoding_layers, p_dropout, dim_ff, n_heads, patch_height, patch_width)
-        elif decoding_type == 'enc':
-            self.decoder = TransfomerEncoder(d_model, n_heads//2, dim_ff, p_dropout, n_encoding_layers//2)
-            self.lin1 = nn.Linear(d_model, patch_width, bias=False)
-            self.lin2 = nn.Linear(1, patch_height, bias=False)
 
     @autocast()
     def forward(self, x, age, sex):
@@ -462,13 +477,6 @@ class FullModel(nn.Module):
             out = self.decoder(transfomer_encoding[:, 0, :], age, sex) #pass vector of shape (batch_size, 1, d_model), (batch_size, 1), (batch_size, 1)
         elif self.decoding_type == 'nar':
             out = self.decoder(transfomer_encoding[:, 1:, :], pos_embedding) #pass vector of shape (batch_size, n_patches, d_model), (batch_size, n_patches, d_model)
-        elif self.decoding_type == 'enc':
-            out = self.decoder(transfomer_encoding[:, 1:, :]) #vector of shape (batch_size, n_patches, d_model)
-            out = out.unsqueeze(2) # (batch_size, n_patches, 1, d_model)
-            out = self.lin1(out) # (batch_size, n_patches, 1, patch_width)
-            out = out.permute(0, 1, 3, 2)
-            out = self.lin2(out) # (batch_size, n_patches, patch_width, patch_height)
-            out = out.permute(0, 1, 3, 2)
         else: #decode/reconstruct all encodings except the cls token
             out = self.decoder(transfomer_encoding[:, 1:, :]) #vector of shape (batch_size, n_patches, patch_height, patch_width)
         return out
