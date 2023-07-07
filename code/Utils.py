@@ -5,7 +5,7 @@ import torch.distributed as dist
 import torch
 import numpy as np
 from scipy.io import loadmat
-from scipy.signal import decimate, resample
+from scipy.signal import decimate, resample, medfilt
 from biosppy.signals.tools import filter_signal
 import re
 import wfdb
@@ -134,6 +134,11 @@ def offline_preprocessing(path_to_dataset, path_to_dest_dir, start = 0):
 
         #bandpass filtering
         ecg_data = apply_filter(ecg_data, [0.05, 47])
+        
+        #apply median filtering to reduce small oscillations 
+        # ! questo filtraggio non l'ho applicato perché non tutti lo fanno e perché in teoria è fatto dalla macchina però
+        # ! forse sarebbe meglio smorzare le piccole oscillazioni che compaiono in qualche ecg
+        # ecg_data = medfilt(ecg_data, kernel_size=3)
 
         #normalize to [-1, 1]
         ecg_data = normalize(ecg_data)

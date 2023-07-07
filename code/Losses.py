@@ -16,6 +16,6 @@ class PatchRecLoss(nn.Module):
 
         if len(reconstructed_patches) > 0 and len(real_patches_to_compare) > 0:
             # Compute the MSE loss between the reconstructed and original patches         
-            return torch.nn.functional.mse_loss(reconstructed_patches, real_patches_to_compare), reconstructed_patches, real_patches_to_compare
+            return torch.nn.functional.mse_loss(reconstructed_patches, real_patches_to_compare), batch_output, batch_real_patches
         else:
             return torch.nn.functional.mse_loss(batch_output, batch_real_patches), batch_output, batch_real_patches

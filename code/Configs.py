@@ -3,26 +3,20 @@
 import yaml
 import torch
 import loguru
+import json
 
 
 def get_configs_from_yaml(path_to_configs_yaml):
     if path_to_configs_yaml is None or not path_to_configs_yaml.endswith('.yaml'):
-        loguru.logger.error("Invalid path to configs yaml file")
+        loguru.logger.error("Invalid path to yaml configs file")
     with open(path_to_configs_yaml, 'r') as file:
         configs = yaml.safe_load(file) #configs is a dictionary
-        
-    # configs['n_patches'] = configs['n_leads'].value * configs['window'].value // (configs['patch_height'] * configs['patch_width'])
-    # patch_size = (configs['patch_height'], configs['patch_width'])
-    # configs['mask_token'] = torch.Tensor([([-1] * (patch_size[1]//2)) + ([1] * (patch_size[1]//2))] * patch_size[0]).to(dtype=torch.float).cuda()
-    # configs['patch_size'] = patch_size
     return configs
 
 def get_configs(path_to_configs_json):
+    if path_to_configs_json is None or not path_to_configs_json.endswith('.json'):
+        loguru.logger.error("Invalid path to json configs file")
     configs = json.load(open(path_to_configs_json))
-    configs['n_patches'] = configs['n_leads'] * configs['window'] // (configs['patch_height'] * configs['patch_width'])
-    patch_size = (configs['patch_height'], configs['patch_width'])
-    configs['mask_token'] = torch.Tensor([([-1] * (patch_size[1]//2)) + ([1] * (patch_size[1]//2))] * patch_size[0]).to(dtype=torch.float).cuda()
-    configs['patch_size'] = patch_size
     return configs
 
 def setup(rank: int, world_size: int):

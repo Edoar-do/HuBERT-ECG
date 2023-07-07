@@ -1,0 +1,1854 @@
+2023-07-05 15:10:41 INFO Running runs: []
+2023-07-05 15:10:41 INFO Agent received command: run
+2023-07-05 15:10:41 INFO Agent starting run with config:
+	batch_size: 512
+	d_model: 128
+	decoding_type: fcn
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedder_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoder_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 1
+	patch_width: 250
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 15:10:41 INFO About to run command: /usr/bin/env python Run.py --batch_size=512 --d_model=128 --decoding_type=fcn --dim_ff=128 --distributed=False --early_stopping=True --embedder_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoder_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=1 --patch_width=250 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-05 15:10:46 INFO Running runs: ['qysoipmd']
+2023-07-05 15:10:46 INFO Cleaning up finished run: qysoipmd
+2023-07-05 15:10:47 INFO Agent received command: run
+2023-07-05 15:10:47 INFO Agent starting run with config:
+	batch_size: 512
+	d_model: 128
+	decoding_type: fcn
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedder_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoder_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 1
+	patch_width: 250
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 15:10:47 INFO About to run command: /usr/bin/env python Run.py --batch_size=512 --d_model=128 --decoding_type=fcn --dim_ff=128 --distributed=False --early_stopping=True --embedder_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoder_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=1 --patch_width=250 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-05 15:10:52 INFO Running runs: ['92rwzqtf']
+2023-07-05 15:10:52 INFO Cleaning up finished run: 92rwzqtf
+2023-07-05 15:10:52 INFO Agent received command: run
+2023-07-05 15:10:52 INFO Agent starting run with config:
+	batch_size: 512
+	d_model: 128
+	decoding_type: fcn
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedder_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoder_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 1
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 15:10:52 INFO About to run command: /usr/bin/env python Run.py --batch_size=512 --d_model=128 --decoding_type=fcn --dim_ff=128 --distributed=False --early_stopping=True --embedder_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoder_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=1 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-05 15:12:56 INFO Running runs: []
+2023-07-05 15:12:57 INFO Agent received command: run
+2023-07-05 15:12:57 INFO Agent starting run with config:
+	batch_size: 512
+	d_model: 128
+	decoding_type: fcn
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedder_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoder_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 1
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 15:12:57 INFO About to run command: /usr/bin/env python Run.py --batch_size=512 --d_model=128 --decoding_type=fcn --dim_ff=128 --distributed=False --early_stopping=True --embedder_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoder_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=1 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-05 15:13:02 INFO Running runs: ['cvhtz3hw']
+2023-07-05 15:17:02 INFO Running runs: []
+2023-07-05 15:17:03 INFO Agent received command: run
+2023-07-05 15:17:03 INFO Agent starting run with config:
+	batch_size: 512
+	d_model: 128
+	decoding_type: fcn
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedder_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoder_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 250
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 15:17:03 INFO About to run command: /usr/bin/env python Run.py --batch_size=512 --d_model=128 --decoding_type=fcn --dim_ff=128 --distributed=False --early_stopping=True --embedder_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoder_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=250 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-05 15:17:08 INFO Running runs: ['z8ef60zj']
+2023-07-05 16:10:45 INFO Running runs: []
+2023-07-05 16:10:45 INFO Agent received command: run
+2023-07-05 16:10:45 INFO Agent starting run with config:
+	__doc__: help\n        wandb.config.update(flags.FLAGS) # adds all absl flags to config\n        ```\n\n        Argparse flags\n        ```python\n        wandb.init()\n        wandb.config.epochs = 4\n\n        parser = argparse.ArgumentParser()\n        parser.add_argument(\n            \-b\
+	_name: wandb.config
+	batch_size: 256
+	d_model: 122
+	decoding_type: fcn
+	dim_ff: 81
+	distributed: true
+	early_stopping: true
+	embedder_type: linear
+	epochs: 13
+	mask_perc: 0.3386375314814827
+	n_classes: 14
+	n_encoder_layers: 1
+	n_heads: 4
+	n_leads: 6
+	num_workers: 6
+	patch_height: 1
+	patch_width: 335
+	patience: 7
+	pos_enc_type: 1d
+	reduced: false
+	warmup: 7810
+	window: 2425
+2023-07-05 16:10:45 INFO About to run command: /usr/bin/env python Run.py "--__doc__=help\n        wandb.config.update(flags.FLAGS) # adds all absl flags to config\n        ```\n\n        Argparse flags\n        ```python\n        wandb.init()\n        wandb.config.epochs = 4\n\n        parser = argparse.ArgumentParser()\n        parser.add_argument(\n            \-b\" --_name=wandb.config --batch_size=256 --d_model=122 --decoding_type=fcn --dim_ff=81 --distributed=true --early_stopping=true --embedder_type=linear --epochs=13 --mask_perc=0.3386375314814827 --n_classes=14 --n_encoder_layers=1 --n_heads=4 --n_leads=6 --num_workers=6 --patch_height=1 --patch_width=335 --patience=7 --pos_enc_type=1d --reduced=false --warmup=7810 --window=2425
+2023-07-05 16:10:50 INFO Running runs: ['kuxd7055']
+2023-07-05 16:10:50 INFO Cleaning up finished run: kuxd7055
+2023-07-05 16:10:57 INFO Agent received command: run
+2023-07-05 16:10:57 INFO Agent starting run with config:
+	__doc__: \batch_size\: 32})\n        for x in range(wandb.config.epochs):\n            # train\n        ```\n\n        Nested configs\n        ```\n        wandb.config['train']['epochs'] = 4\n        wandb.init()\n        for x in range(wandb.config['train']['epochs']):\n            # train\n        ```\n\n        Using absl flags\n        ```\n        flags.DEFINE_string(‘model’
+	_name: wandb.config
+	batch_size: 738
+	d_model: 169
+	decoding_type: fcn
+	dim_ff: 162
+	distributed: true
+	early_stopping: true
+	embedder_type: linear
+	epochs: 12
+	mask_perc: 0.5249045258258049
+	n_classes: 13
+	n_encoder_layers: 4
+	n_heads: 4
+	n_leads: 19
+	num_workers: 8
+	patch_height: 2
+	patch_width: 314
+	patience: 9
+	pos_enc_type: 2d
+	reduced: false
+	warmup: 4590
+	window: 4493
+2023-07-05 16:10:57 INFO About to run command: /usr/bin/env python Run.py "--__doc__=\batch_size\: 32})\n        for x in range(wandb.config.epochs):\n            # train\n        ```\n\n        Nested configs\n        ```\n        wandb.config['train']['epochs'] = 4\n        wandb.init()\n        for x in range(wandb.config['train']['epochs']):\n            # train\n        ```\n\n        Using absl flags\n        ```\n        flags.DEFINE_string(‘model’" --_name=wandb.config --batch_size=738 --d_model=169 --decoding_type=fcn --dim_ff=162 --distributed=true --early_stopping=true --embedder_type=linear --epochs=12 --mask_perc=0.5249045258258049 --n_classes=13 --n_encoder_layers=4 --n_heads=4 --n_leads=19 --num_workers=8 --patch_height=2 --patch_width=314 --patience=9 --pos_enc_type=2d --reduced=false --warmup=4590 --window=4493
+2023-07-05 16:11:02 INFO Running runs: ['i723go8d']
+2023-07-05 16:11:13 INFO Cleaning up finished run: i723go8d
+2023-07-05 16:11:13 ERROR 404 response executing GraphQL.
+2023-07-05 16:11:13 ERROR {"errors":[{"message":"could not find agent ubwyjvug during agentHeartbeat","path":["agentHeartbeat"]}],"data":{"agentHeartbeat":null}}
+2023-07-05 16:12:55 INFO Running runs: []
+2023-07-05 16:12:55 INFO Agent received command: run
+2023-07-05 16:12:55 INFO Agent starting run with config:
+	batch_size: 512
+	d_model: 128
+	decoding_type: fcn
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 1
+	patch_width: 250
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 16:12:55 INFO About to run command: /usr/bin/env python Run.py --batch_size=512 --d_model=128 --decoding_type=fcn --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=1 --patch_width=250 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-05 16:13:00 INFO Running runs: ['m7147wgj']
+2023-07-05 16:13:31 INFO Cleaning up finished run: m7147wgj
+2023-07-05 16:13:37 INFO Agent received command: run
+2023-07-05 16:13:37 INFO Agent starting run with config:
+	batch_size: 512
+	d_model: 128
+	decoding_type: fcn
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 1
+	patch_width: 250
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 16:13:37 INFO About to run command: /usr/bin/env python Run.py --batch_size=512 --d_model=128 --decoding_type=fcn --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=1 --patch_width=250 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-05 16:13:42 INFO Running runs: ['oyi1z2qc']
+2023-07-05 16:14:18 INFO Cleaning up finished run: oyi1z2qc
+2023-07-05 16:14:19 INFO Agent received command: run
+2023-07-05 16:14:19 INFO Agent starting run with config:
+	batch_size: 512
+	d_model: 128
+	decoding_type: fcn
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 1
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 16:14:19 INFO About to run command: /usr/bin/env python Run.py --batch_size=512 --d_model=128 --decoding_type=fcn --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=1 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-05 16:14:24 INFO Running runs: ['cyvhu5bt']
+2023-07-05 16:23:34 INFO Running runs: []
+2023-07-05 16:23:34 INFO Agent received command: run
+2023-07-05 16:23:34 INFO Agent starting run with config:
+	batch_size: 512
+	d_model: 128
+	decoding_type: fcn
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 1
+	patch_width: 250
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 16:23:34 INFO About to run command: /usr/bin/env python script.py --batch_size=512 --d_model=128 --decoding_type=fcn --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=1 --patch_width=250 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-05 16:23:39 INFO Running runs: ['qh17o1rw']
+2023-07-05 16:23:39 INFO Cleaning up finished run: qh17o1rw
+2023-07-05 17:53:59 ERROR 403 response executing GraphQL.
+2023-07-05 17:53:59 ERROR {"errors":[{"message":"permission denied","path":["upsertSweep"],"extensions":{"code":"PERMISSION_ERROR"}}],"data":{"upsertSweep":null}}
+2023-07-05 17:53:59 ERROR Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/lib/retry.py", line 131, in __call__
+    result = self._call_fn(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 320, in execute
+    return self.client.execute(*args, **kwargs)  # type: ignore
+  File "/usr/local/lib/python3.8/dist-packages/wandb/vendor/gql-0.2.0/wandb_gql/client.py", line 52, in execute
+    result = self._get_result(document, *args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/vendor/gql-0.2.0/wandb_gql/client.py", line 60, in _get_result
+    return self.transport.execute(document, *args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/lib/gql_request.py", line 56, in execute
+    request.raise_for_status()
+  File "/usr/local/lib/python3.8/dist-packages/requests/models.py", line 1021, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://api.wandb.ai/graphql
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/wandb/cli/cli.py", line 106, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/cli/cli.py", line 853, in sweep
+    sweep_id, warnings = api.upsert_sweep(
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/internal.py", line 129, in upsert_sweep
+    return self.api.upsert_sweep(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/normalize.py", line 73, in wrapper
+    raise err
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/normalize.py", line 41, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 2595, in upsert_sweep
+    raise e
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 2589, in upsert_sweep
+    response = self.gql(
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 292, in gql
+    ret = self._retry_gql(
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/lib/retry.py", line 147, in __call__
+    retry_timedelta_triggered = check_retry_fn(e)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/util.py", line 821, in no_retry_4xx
+    raise UsageError(body["errors"][0]["message"])
+wandb.errors.UsageError: permission denied
+
+2023-07-05 17:54:25 ERROR 403 response executing GraphQL.
+2023-07-05 17:54:25 ERROR {"errors":[{"message":"permission denied","path":["upsertSweep"],"extensions":{"code":"PERMISSION_ERROR"}}],"data":{"upsertSweep":null}}
+2023-07-05 17:54:25 ERROR Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/lib/retry.py", line 131, in __call__
+    result = self._call_fn(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 320, in execute
+    return self.client.execute(*args, **kwargs)  # type: ignore
+  File "/usr/local/lib/python3.8/dist-packages/wandb/vendor/gql-0.2.0/wandb_gql/client.py", line 52, in execute
+    result = self._get_result(document, *args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/vendor/gql-0.2.0/wandb_gql/client.py", line 60, in _get_result
+    return self.transport.execute(document, *args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/lib/gql_request.py", line 56, in execute
+    request.raise_for_status()
+  File "/usr/local/lib/python3.8/dist-packages/requests/models.py", line 1021, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://api.wandb.ai/graphql
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/wandb/cli/cli.py", line 106, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/cli/cli.py", line 853, in sweep
+    sweep_id, warnings = api.upsert_sweep(
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/internal.py", line 129, in upsert_sweep
+    return self.api.upsert_sweep(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/normalize.py", line 73, in wrapper
+    raise err
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/normalize.py", line 41, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 2595, in upsert_sweep
+    raise e
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 2589, in upsert_sweep
+    response = self.gql(
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 292, in gql
+    ret = self._retry_gql(
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/lib/retry.py", line 147, in __call__
+    retry_timedelta_triggered = check_retry_fn(e)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/util.py", line 821, in no_retry_4xx
+    raise UsageError(body["errors"][0]["message"])
+wandb.errors.UsageError: permission denied
+
+2023-07-05 18:07:05 ERROR 403 response executing GraphQL.
+2023-07-05 18:07:05 ERROR {"errors":[{"message":"permission denied","path":["upsertSweep"],"extensions":{"code":"PERMISSION_ERROR"}}],"data":{"upsertSweep":null}}
+2023-07-05 18:07:05 ERROR Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/lib/retry.py", line 131, in __call__
+    result = self._call_fn(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 320, in execute
+    return self.client.execute(*args, **kwargs)  # type: ignore
+  File "/usr/local/lib/python3.8/dist-packages/wandb/vendor/gql-0.2.0/wandb_gql/client.py", line 52, in execute
+    result = self._get_result(document, *args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/vendor/gql-0.2.0/wandb_gql/client.py", line 60, in _get_result
+    return self.transport.execute(document, *args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/lib/gql_request.py", line 56, in execute
+    request.raise_for_status()
+  File "/usr/local/lib/python3.8/dist-packages/requests/models.py", line 1021, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://api.wandb.ai/graphql
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/wandb/cli/cli.py", line 106, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/cli/cli.py", line 853, in sweep
+    sweep_id, warnings = api.upsert_sweep(
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/internal.py", line 129, in upsert_sweep
+    return self.api.upsert_sweep(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/normalize.py", line 73, in wrapper
+    raise err
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/normalize.py", line 41, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 2595, in upsert_sweep
+    raise e
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 2589, in upsert_sweep
+    response = self.gql(
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 292, in gql
+    ret = self._retry_gql(
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/lib/retry.py", line 147, in __call__
+    retry_timedelta_triggered = check_retry_fn(e)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/util.py", line 821, in no_retry_4xx
+    raise UsageError(body["errors"][0]["message"])
+wandb.errors.UsageError: permission denied
+
+2023-07-05 18:08:02 ERROR Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/normalize.py", line 41, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 839, in sweep
+    raise ValueError(f"Sweep {entity}/{project}/{sweep} not found")
+ValueError: Sweep cardia-ai/ECG_pretraining-code/vr5p5y15 not found
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/wandb/cli/cli.py", line 106, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/cli/cli.py", line 1471, in agent
+    wandb_agent.agent(sweep_id, entity=entity, project=project, count=count)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/wandb_agent.py", line 583, in agent
+    return run_agent(
+  File "/usr/local/lib/python3.8/dist-packages/wandb/wandb_agent.py", line 528, in run_agent
+    agent.run()
+  File "/usr/local/lib/python3.8/dist-packages/wandb/wandb_agent.py", line 190, in run
+    sweep_obj = self._api.sweep(self._sweep_id, "{}")
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/internal.py", line 126, in sweep
+    return self.api.sweep(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/normalize.py", line 87, in wrapper
+    raise CommError(message, err).with_traceback(sys.exc_info()[2])
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/normalize.py", line 41, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 839, in sweep
+    raise ValueError(f"Sweep {entity}/{project}/{sweep} not found")
+wandb.errors.CommError: Sweep cardia-ai/ECG_pretraining-code/vr5p5y15 not found
+
+2023-07-05 18:11:34 INFO Running runs: []
+2023-07-05 18:11:35 INFO Agent received command: run
+2023-07-05 18:11:35 INFO Agent starting run with config:
+	batch_size: 512
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 18:11:35 INFO About to run command: /usr/bin/env python Run.py --batch_size=512 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-05 18:11:40 INFO Running runs: ['yvyqxxvl']
+2023-07-05 18:22:15 INFO Retry attempt failed:
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/urllib3/connection.py", line 174, in _new_conn
+    conn = connection.create_connection(
+  File "/usr/local/lib/python3.8/dist-packages/urllib3/util/connection.py", line 72, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "/usr/lib/python3.8/socket.py", line 918, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/urllib3/connectionpool.py", line 703, in urlopen
+    httplib_response = self._make_request(
+  File "/usr/local/lib/python3.8/dist-packages/urllib3/connectionpool.py", line 386, in _make_request
+    self._validate_conn(conn)
+  File "/usr/local/lib/python3.8/dist-packages/urllib3/connectionpool.py", line 1042, in _validate_conn
+    conn.connect()
+  File "/usr/local/lib/python3.8/dist-packages/urllib3/connection.py", line 358, in connect
+    self.sock = conn = self._new_conn()
+  File "/usr/local/lib/python3.8/dist-packages/urllib3/connection.py", line 186, in _new_conn
+    raise NewConnectionError(
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPSConnection object at 0x7f62270a4910>: Failed to establish a new connection: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/requests/adapters.py", line 489, in send
+    resp = conn.urlopen(
+  File "/usr/local/lib/python3.8/dist-packages/urllib3/connectionpool.py", line 787, in urlopen
+    retries = retries.increment(
+  File "/usr/local/lib/python3.8/dist-packages/urllib3/util/retry.py", line 592, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='api.wandb.ai', port=443): Max retries exceeded with url: /graphql (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f62270a4910>: Failed to establish a new connection: [Errno -2] Name or service not known'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/lib/retry.py", line 131, in __call__
+    result = self._call_fn(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 320, in execute
+    return self.client.execute(*args, **kwargs)  # type: ignore
+  File "/usr/local/lib/python3.8/dist-packages/wandb/vendor/gql-0.2.0/wandb_gql/client.py", line 52, in execute
+    result = self._get_result(document, *args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/vendor/gql-0.2.0/wandb_gql/client.py", line 60, in _get_result
+    return self.transport.execute(document, *args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/lib/gql_request.py", line 55, in execute
+    request = self.session.post(self.url, **post_args)
+  File "/usr/local/lib/python3.8/dist-packages/requests/sessions.py", line 635, in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/requests/sessions.py", line 587, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/requests/sessions.py", line 701, in send
+    r = adapter.send(request, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/requests/adapters.py", line 565, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPSConnectionPool(host='api.wandb.ai', port=443): Max retries exceeded with url: /graphql (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f62270a4910>: Failed to establish a new connection: [Errno -2] Name or service not known'))
+2023-07-05 18:32:22 INFO Cleaning up finished run: yvyqxxvl
+2023-07-05 18:32:33 INFO Agent received command: run
+2023-07-05 18:32:33 INFO Agent starting run with config:
+	batch_size: 512
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 18:32:33 INFO About to run command: /usr/bin/env python Run.py --batch_size=512 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-05 18:32:38 INFO Running runs: ['9ue94ktr']
+2023-07-05 19:02:50 INFO Running runs: []
+2023-07-05 19:02:50 INFO Agent received command: run
+2023-07-05 19:02:50 INFO Agent starting run with config:
+	batch_size: 2048
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 19:02:50 INFO About to run command: /usr/bin/env python Run.py --batch_size=2048 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-05 19:02:55 INFO Running runs: ['f2992k6u']
+2023-07-05 19:24:53 INFO Cleaning up finished run: f2992k6u
+2023-07-05 19:24:59 INFO Agent received command: run
+2023-07-05 19:24:59 INFO Agent starting run with config:
+	batch_size: 2048
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 19:24:59 INFO About to run command: /usr/bin/env python Run.py --batch_size=2048 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-05 19:25:04 INFO Running runs: ['f408l01k']
+2023-07-05 19:46:56 INFO Cleaning up finished run: f408l01k
+2023-07-05 19:46:57 INFO Agent received command: run
+2023-07-05 19:46:57 INFO Agent starting run with config:
+	batch_size: 2048
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 3
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 19:46:57 INFO About to run command: /usr/bin/env python Run.py --batch_size=2048 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=3 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-05 19:47:02 INFO Running runs: ['8xnmdm5n']
+2023-07-05 19:47:12 INFO Cleaning up finished run: 8xnmdm5n
+2023-07-05 19:47:13 INFO Agent received command: run
+2023-07-05 19:47:13 INFO Agent starting run with config:
+	batch_size: 2048
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 3
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 19:47:13 INFO About to run command: /usr/bin/env python Run.py --batch_size=2048 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=3 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-05 19:47:18 INFO Running runs: ['kzbsb54h']
+2023-07-05 19:47:33 INFO Cleaning up finished run: kzbsb54h
+2023-07-05 19:47:33 INFO Agent received command: run
+2023-07-05 19:47:33 INFO Agent starting run with config:
+	batch_size: 2048
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-05 19:47:33 INFO About to run command: /usr/bin/env python Run.py --batch_size=2048 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-05 19:47:38 INFO Running runs: ['iopcar1k']
+2023-07-05 20:10:51 ERROR Detected 5 failed runs in a row, shutting down.
+2023-07-05 20:10:51 INFO To change this value set WANDB_AGENT_MAX_INITIAL_FAILURES=val
+2023-07-06 10:39:02 INFO Running runs: []
+2023-07-06 10:39:02 INFO Agent received command: run
+2023-07-06 10:39:02 INFO Agent starting run with config:
+	batch_size: 4096
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 10:39:02 INFO About to run command: /usr/bin/env python Run.py --batch_size=4096 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 10:39:07 INFO Running runs: ['g3842rjd']
+2023-07-06 11:06:31 INFO Cleaning up finished run: g3842rjd
+2023-07-06 11:06:38 INFO Agent received command: run
+2023-07-06 11:06:38 INFO Agent starting run with config:
+	batch_size: 4096
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 11:06:38 INFO About to run command: /usr/bin/env python Run.py --batch_size=4096 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 11:06:43 INFO Running runs: ['q7we8rnt']
+2023-07-06 11:31:32 ERROR 400 response executing GraphQL.
+2023-07-06 11:31:32 ERROR {"errors":[{"message":"Sweep cardi-ai/ECG-pretraining/3gaaxq49 is not running","path":["createAgent"]}],"data":{"createAgent":null}}
+2023-07-06 11:31:32 ERROR Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/lib/retry.py", line 131, in __call__
+    result = self._call_fn(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 321, in execute
+    return self.client.execute(*args, **kwargs)  # type: ignore
+  File "/usr/local/lib/python3.8/dist-packages/wandb/vendor/gql-0.2.0/wandb_gql/client.py", line 52, in execute
+    result = self._get_result(document, *args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/vendor/gql-0.2.0/wandb_gql/client.py", line 60, in _get_result
+    return self.transport.execute(document, *args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/lib/gql_request.py", line 56, in execute
+    request.raise_for_status()
+  File "/usr/local/lib/python3.8/dist-packages/requests/models.py", line 1021, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: https://api.wandb.ai/graphql
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/wandb/cli/cli.py", line 106, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/cli/cli.py", line 1471, in agent
+    wandb_agent.agent(sweep_id, entity=entity, project=project, count=count)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/wandb_agent.py", line 583, in agent
+    return run_agent(
+  File "/usr/local/lib/python3.8/dist-packages/wandb/wandb_agent.py", line 528, in run_agent
+    agent.run()
+  File "/usr/local/lib/python3.8/dist-packages/wandb/wandb_agent.py", line 201, in run
+    agent = self._api.register_agent(socket.gethostname(), sweep_id=self._sweep_id)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/internal.py", line 150, in register_agent
+    return self.api.register_agent(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/normalize.py", line 73, in wrapper
+    raise err
+  File "/usr/local/lib/python3.8/dist-packages/wandb/apis/normalize.py", line 41, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 2457, in register_agent
+    response = self.gql(
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/internal/internal_api.py", line 293, in gql
+    ret = self._retry_gql(
+  File "/usr/local/lib/python3.8/dist-packages/wandb/sdk/lib/retry.py", line 147, in __call__
+    retry_timedelta_triggered = check_retry_fn(e)
+  File "/usr/local/lib/python3.8/dist-packages/wandb/util.py", line 859, in no_retry_4xx
+    raise UsageError(body["errors"][0]["message"])
+wandb.errors.UsageError: Sweep cardi-ai/ECG-pretraining/3gaaxq49 is not running
+
+2023-07-06 11:31:48 ERROR 404 response executing GraphQL.
+2023-07-06 11:31:48 ERROR {"errors":[{"message":"could not find agent yu7pnfn8 during agentHeartbeat","path":["agentHeartbeat"]}],"data":{"agentHeartbeat":null}}
+2023-07-06 11:32:46 INFO Running runs: []
+2023-07-06 11:32:47 INFO Agent received command: run
+2023-07-06 11:32:47 INFO Agent starting run with config:
+	batch_size: 4096
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 11:32:47 INFO About to run command: /usr/bin/env python Run.py --batch_size=4096 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 11:32:52 INFO Running runs: ['l2xb113m']
+2023-07-06 11:59:47 INFO Cleaning up finished run: l2xb113m
+2023-07-06 11:59:53 INFO Agent received command: run
+2023-07-06 11:59:53 INFO Agent starting run with config:
+	batch_size: 4096
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 11:59:53 INFO About to run command: /usr/bin/env python Run.py --batch_size=4096 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 11:59:58 INFO Running runs: ['lxfts91r']
+2023-07-06 12:26:50 INFO Running runs: []
+2023-07-06 12:26:50 INFO Agent received command: run
+2023-07-06 12:26:50 INFO Agent starting run with config:
+	batch_size: 4096
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 12:26:50 INFO About to run command: /usr/bin/env python Run.py --batch_size=4096 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 12:26:55 INFO Running runs: ['owg9ssgt']
+2023-07-06 12:56:26 INFO Cleaning up finished run: owg9ssgt
+2023-07-06 12:56:31 INFO Agent received command: run
+2023-07-06 12:56:31 INFO Agent starting run with config:
+	batch_size: 4096
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 12:56:31 INFO About to run command: /usr/bin/env python Run.py --batch_size=4096 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 12:56:36 INFO Running runs: ['dgtdgtjg']
+2023-07-06 14:28:08 INFO Running runs: []
+2023-07-06 14:28:08 INFO Agent received command: run
+2023-07-06 14:28:08 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 14:28:08 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 14:28:13 INFO Running runs: ['6xksov5y']
+2023-07-06 12:44:18 INFO Running runs: []
+2023-07-06 12:44:19 INFO Agent received command: run
+2023-07-06 12:44:19 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 12:44:19 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 12:44:24 INFO Running runs: ['d1wze5h1']
+2023-07-06 12:44:24 INFO Cleaning up finished run: d1wze5h1
+2023-07-06 12:44:24 INFO Agent received command: run
+2023-07-06 12:44:24 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 3
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 12:44:24 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=3 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 12:44:29 INFO Running runs: ['azwh9nxy']
+2023-07-06 12:44:29 INFO Cleaning up finished run: azwh9nxy
+2023-07-06 12:44:30 INFO Agent received command: run
+2023-07-06 12:44:30 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 3
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 12:44:30 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=3 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 12:44:35 INFO Running runs: ['fvrqwzsz']
+2023-07-06 12:44:35 ERROR Detected 3 failed runs in the first 60 seconds, shutting down.
+2023-07-06 12:44:35 INFO To disable this check set WANDB_AGENT_DISABLE_FLAPPING=true
+2023-07-06 12:51:58 INFO Running runs: []
+2023-07-06 12:51:58 INFO Agent received command: run
+2023-07-06 12:51:58 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 12:51:58 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 12:52:03 INFO Running runs: ['uyjtvl0l']
+2023-07-06 12:52:03 INFO Cleaning up finished run: uyjtvl0l
+2023-07-06 12:52:04 INFO Agent received command: run
+2023-07-06 12:52:04 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 12:52:04 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 12:52:37 INFO Running runs: []
+2023-07-06 12:52:37 INFO Agent received command: run
+2023-07-06 12:52:37 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 3
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 12:52:37 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=3 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 12:52:42 INFO Running runs: ['0y21r04j']
+2023-07-06 12:52:42 INFO Cleaning up finished run: 0y21r04j
+2023-07-06 12:52:43 INFO Agent received command: run
+2023-07-06 12:52:43 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 3
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 12:52:43 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=3 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 12:52:48 INFO Running runs: ['q02u21u5']
+2023-07-06 12:52:48 INFO Cleaning up finished run: q02u21u5
+2023-07-06 12:52:48 INFO Agent received command: run
+2023-07-06 12:52:48 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: conv
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 12:52:48 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=conv --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 12:56:08 INFO Running runs: []
+2023-07-06 12:56:08 INFO Agent received command: run
+2023-07-06 12:56:08 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: conv
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 12:56:08 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=conv --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 12:56:13 INFO Running runs: ['fziiesl7']
+2023-07-06 12:56:24 INFO Cleaning up finished run: fziiesl7
+2023-07-06 15:10:25 INFO Cleaning up finished run: 6xksov5y
+2023-07-06 15:10:31 INFO Agent received command: run
+2023-07-06 15:10:31 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: conv
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 3
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:10:31 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=conv --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=3 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:10:36 INFO Running runs: ['kz47ywvi']
+2023-07-06 15:10:52 INFO Cleaning up finished run: kz47ywvi
+2023-07-06 15:10:52 INFO Agent received command: run
+2023-07-06 15:10:52 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: conv
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 3
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:10:52 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=conv --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=3 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:10:57 INFO Running runs: ['2d5cudjp']
+2023-07-06 15:11:13 INFO Cleaning up finished run: 2d5cudjp
+2023-07-06 15:11:13 INFO Agent received command: run
+2023-07-06 15:11:13 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: conv
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:11:13 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=conv --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:11:18 INFO Running runs: ['8911khmv']
+2023-07-06 15:11:34 INFO Cleaning up finished run: 8911khmv
+2023-07-06 15:11:34 INFO Agent received command: run
+2023-07-06 15:11:34 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: conv
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:11:34 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=conv --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:11:39 INFO Running runs: ['v7ixyav2']
+2023-07-06 15:11:54 ERROR Detected 5 failed runs in a row, shutting down.
+2023-07-06 15:11:54 INFO To change this value set WANDB_AGENT_MAX_INITIAL_FAILURES=val
+2023-07-06 15:36:02 INFO Running runs: []
+2023-07-06 15:36:02 INFO Agent received command: run
+2023-07-06 15:36:02 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: conv
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 3
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:36:02 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=conv --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=3 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:36:07 INFO Running runs: ['7n7qitf8']
+2023-07-06 15:36:07 INFO Cleaning up finished run: 7n7qitf8
+2023-07-06 15:36:08 INFO Agent received command: run
+2023-07-06 15:36:08 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: conv
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 3
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:36:08 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=conv --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=3 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:36:13 INFO Running runs: ['hii2gzxx']
+2023-07-06 15:36:13 INFO Cleaning up finished run: hii2gzxx
+2023-07-06 15:36:13 INFO Agent received command: run
+2023-07-06 15:36:13 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 256
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:36:13 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=256 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:36:18 INFO Running runs: ['ntmxyyog']
+2023-07-06 15:36:18 ERROR Detected 3 failed runs in the first 60 seconds, shutting down.
+2023-07-06 15:36:18 INFO To disable this check set WANDB_AGENT_DISABLE_FLAPPING=true
+2023-07-06 15:38:23 INFO Running runs: []
+2023-07-06 15:38:23 INFO Agent received command: run
+2023-07-06 15:38:23 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:38:23 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:38:28 INFO Running runs: ['y1kiwdgj']
+2023-07-06 15:38:28 INFO Cleaning up finished run: y1kiwdgj
+2023-07-06 15:38:28 INFO Agent received command: run
+2023-07-06 15:38:28 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:38:28 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:38:33 INFO Running runs: ['98izh456']
+2023-07-06 15:38:33 INFO Cleaning up finished run: 98izh456
+2023-07-06 15:38:34 INFO Agent received command: run
+2023-07-06 15:38:34 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 3
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:38:34 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=3 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:38:39 INFO Running runs: ['7a7iwybh']
+2023-07-06 15:38:39 ERROR Detected 3 failed runs in the first 60 seconds, shutting down.
+2023-07-06 15:38:39 INFO To disable this check set WANDB_AGENT_DISABLE_FLAPPING=true
+2023-07-06 15:39:45 INFO Running runs: []
+2023-07-06 15:39:45 INFO Agent received command: run
+2023-07-06 15:39:45 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 3
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:39:46 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=3 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:39:51 INFO Running runs: ['n8vgg3wh']
+2023-07-06 15:40:01 INFO Cleaning up finished run: n8vgg3wh
+2023-07-06 15:40:07 INFO Agent received command: run
+2023-07-06 15:40:07 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:40:07 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:40:12 INFO Running runs: ['4prjf0tf']
+2023-07-06 15:45:09 INFO Running runs: []
+2023-07-06 15:45:10 INFO Agent received command: run
+2023-07-06 15:45:10 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:45:10 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:45:15 INFO Running runs: ['rzjj2bvh']
+2023-07-06 15:46:22 INFO Cleaning up finished run: rzjj2bvh
+2023-07-06 15:46:27 INFO Agent received command: run
+2023-07-06 15:46:27 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:46:27 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:46:32 INFO Running runs: ['gp0jfbks']
+2023-07-06 15:46:58 INFO Cleaning up finished run: gp0jfbks
+2023-07-06 15:46:58 INFO Agent received command: run
+2023-07-06 15:46:58 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 4
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:46:58 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=4 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:47:03 INFO Running runs: ['0mr3qbxf']
+2023-07-06 15:49:48 INFO Running runs: []
+2023-07-06 15:49:48 INFO Agent received command: run
+2023-07-06 15:49:48 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 4
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 15:49:48 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=4 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 15:49:53 INFO Running runs: ['z6sz9k6v']
+2023-07-06 14:17:37 INFO Running runs: []
+2023-07-06 14:17:38 INFO Agent received command: run
+2023-07-06 14:17:38 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 14:17:38 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 14:17:43 INFO Running runs: ['pypiad5r']
+2023-07-06 16:36:05 INFO Cleaning up finished run: z6sz9k6v
+2023-07-06 16:36:12 INFO Agent received command: run
+2023-07-06 16:36:12 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 16:36:12 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 16:36:17 INFO Running runs: ['a56zd4ag']
+2023-07-06 18:09:24 INFO Cleaning up finished run: a56zd4ag
+2023-07-06 18:09:24 INFO Agent received command: run
+2023-07-06 18:09:24 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 4
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 18:09:24 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=4 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 18:09:29 INFO Running runs: ['bbd6cj8u']
+2023-07-06 20:40:36 INFO Cleaning up finished run: bbd6cj8u
+2023-07-06 20:40:37 INFO Agent received command: run
+2023-07-06 20:40:37 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: linear
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 4
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 20:40:37 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=linear --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=4 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 20:40:42 INFO Running runs: ['8hcw3p1z']
+2023-07-06 19:44:31 ERROR 502 response executing GraphQL.
+2023-07-06 19:44:31 ERROR 
+<html><head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<title>502 Server Error</title>
+</head>
+<body text=#000000 bgcolor=#ffffff>
+<h1>Error: Server Error</h1>
+<h2>The server encountered a temporary error and could not complete your request.<p>Please try again in 30 seconds.</h2>
+<h2></h2>
+</body></html>
+
+2023-07-06 23:06:08 INFO Cleaning up finished run: pypiad5r
+2023-07-06 23:06:15 INFO Agent received command: run
+2023-07-06 23:06:15 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: conv
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 23:06:15 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=conv --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 23:06:20 INFO Running runs: ['nfqleweu']
+2023-07-06 23:06:36 INFO Cleaning up finished run: nfqleweu
+2023-07-06 23:06:36 INFO Agent received command: run
+2023-07-06 23:06:36 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: conv
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 23:06:36 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=conv --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 23:06:41 INFO Running runs: ['ensbds1d']
+2023-07-06 23:06:51 INFO Cleaning up finished run: ensbds1d
+2023-07-06 23:06:52 INFO Agent received command: run
+2023-07-06 23:06:52 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: conv
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 4
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 23:06:52 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=conv --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=4 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 23:06:57 INFO Running runs: ['h72jepr1']
+2023-07-06 23:07:07 INFO Cleaning up finished run: h72jepr1
+2023-07-06 23:07:07 INFO Agent received command: run
+2023-07-06 23:07:07 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: conv
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 2
+	n_heads: 4
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 23:07:07 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=conv --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=2 --n_heads=4 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-06 23:07:12 INFO Running runs: ['yavktpi6']
+2023-07-06 23:07:23 INFO Cleaning up finished run: yavktpi6
+2023-07-06 23:07:27 INFO Agent received command: run
+2023-07-06 23:07:27 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: conv
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 1d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-06 23:07:27 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=conv --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=1d --reduced=True --warmup=4000 --window=2500
+2023-07-06 23:07:32 INFO Running runs: ['526ns6ik']
+2023-07-06 23:07:43 ERROR Detected 5 failed runs in a row, shutting down.
+2023-07-06 23:07:43 INFO To change this value set WANDB_AGENT_MAX_INITIAL_FAILURES=val
+2023-07-07 01:34:20 INFO Cleaning up finished run: 8hcw3p1z
+2023-07-07 01:34:20 INFO Agent received command: run
+2023-07-07 01:34:20 INFO Agent starting run with config:
+	batch_size: 8192
+	d_model: 128
+	decoding_type: rev
+	dim_ff: 128
+	distributed: False
+	early_stopping: True
+	embedding_type: conv
+	epochs: 10
+	mask_perc: 0.3
+	n_classes: 9
+	n_encoding_layers: 3
+	n_heads: 2
+	n_leads: 12
+	num_workers: 4
+	patch_height: 2
+	patch_width: 500
+	patience: 10
+	pos_enc_type: 2d
+	reduced: True
+	warmup: 4000
+	window: 2500
+2023-07-07 01:34:20 INFO About to run command: /usr/bin/env python Run.py --batch_size=8192 --d_model=128 --decoding_type=rev --dim_ff=128 --distributed=False --early_stopping=True --embedding_type=conv --epochs=10 --mask_perc=0.3 --n_classes=9 --n_encoding_layers=3 --n_heads=2 --n_leads=12 --num_workers=4 --patch_height=2 --patch_width=500 --patience=10 --pos_enc_type=2d --reduced=True --warmup=4000 --window=2500
+2023-07-07 01:34:25 INFO Running runs: ['xbk9kot0']
+2023-07-07 01:34:41 ERROR Detected 5 failed runs in a row, shutting down.
+2023-07-07 01:34:41 INFO To change this value set WANDB_AGENT_MAX_INITIAL_FAILURES=val

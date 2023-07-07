@@ -9,6 +9,7 @@ from Model import FullModel, Patcher, Masker
 from torch.cuda.amp import autocast, GradScaler
 from Losses import PatchRecLoss
 from loguru import logger
+from Test import visual_comparing
 
 def validate_supervised(val_dataloader, model, loss_fn, patcher, *metrics):
     '''Validate a `model` in a supervised fashion once per epoch using data fetched by `val_dataloader` according to `loss_fn` function and any additional `metric`.
@@ -46,7 +47,7 @@ def validate_supervised(val_dataloader, model, loss_fn, patcher, *metrics):
         batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float)# (batch_size, 1)
 
         batch_labels = torch.stack(batch_labels, dim=0).cuda().to(dtype=torch.float)
-
+        
         with torch.no_grad():
             with autocast():
                 pred = model(batch_patches, batch_age, batch_sex)
@@ -59,7 +60,7 @@ def validate_supervised(val_dataloader, model, loss_fn, patcher, *metrics):
         epoch_losses.append(loss.item())
 
     val_loss = np.mean(epoch_losses)
-    # wandb.log({"val_loss" : val_loss}) # redundant, already done in train 
+    wandb.log({"val_loss" : val_loss}) # redundant, already done in train 
     return val_loss, epoch_lbls, epoch_probs #validation loss for a given epoch, labels and probs for a given epoch
 
 def validate_self_supervised(val_dataloader, model, loss_fn, patcher, masker, *metrics):
@@ -88,8 +89,7 @@ def validate_self_supervised(val_dataloader, model, loss_fn, patcher, masker, *m
         #batch_age, batch_sex are tuples on nan (float) that are batch_size long in case of self-supervised (supervised) training
 
         batch_ecg_data = torch.stack(batch_ecg_data, dim=0).cuda().to(dtype=torch.float) #--> (bs, 12, 5000)
-        batch_patches, _ = patcher (batch_ecg_data)
-        
+        batch_patches, unfolded_shape = patcher (batch_ecg_data)
 
         if isinstance(loss_fn, PatchRecLoss):
             batch_masked_patches, batch_indeces_masked_patches = masker(batch_patches.detach().clone())
@@ -98,13 +98,15 @@ def validate_self_supervised(val_dataloader, model, loss_fn, patcher, masker, *m
             with torch.no_grad():
                 with autocast():
                     pred = model(batch_masked_patches, batch_age, batch_sex)
-                    loss, rec_patches, real_patches = loss_fn(pred, batch_patches, batch_indeces_masked_patches)
+                    loss, batch_rec_patches, batch_real_patches = loss_fn(pred, batch_patches, batch_indeces_masked_patches)
+                    wandb.log({"Example of reconstruction" : wandb.Image(visual_comparing(batch_rec_patches.cpu(), batch_real_patches.cpu(), batch_masked_patches.cpu(), unfolded_shape))}) #logging examples of reconstructed patches
+
 
         epoch_losses.append(loss.item())
 
     val_loss = np.mean(epoch_losses)
     if isinstance(loss_fn, PatchRecLoss):
-        # wandb.log({"val_loss" : val_loss}) # redundant log, already done in train method
+        wandb.log({"val_loss" : val_loss}) # redundant log, already done in train method
         return np.mean(epoch_losses) #validation loss for a given epoch
 
 def save_model_modules(model, optimizer, path, model_name, configs):
@@ -217,7 +219,7 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
                 best_val_loss = epoch_val_loss
                 patience_count = 0
                 if save_model and model_name is not None:
-                    save_model_modules(model, optimizer.optimizer, "./ECG_pretraining/models/checkpoints/supervised/", model_name, configs)
+                    save_model_modules(model, optimizer.optimizer, "../models/checkpoints/supervised/", model_name, configs)
             else: #not improving
                 patience_count += 1
                 if patience_count >= patience:
@@ -296,7 +298,7 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
             # compute prediction and loss
             with autocast():
                 prediction = model(batch_masked_patches, batch_age, batch_sex)
-                loss, rec_patches, real_masked_patches = rec_loss_fn(prediction, batch_patches, batch_indeces_masked_patches)
+                loss, batch_rec_patches, batch_real_patches = rec_loss_fn(prediction, batch_patches, batch_indeces_masked_patches)
             
             #backpropagation
             scaler.scale(loss).backward()
@@ -325,7 +327,7 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
                 best_val_loss = epoch_val_loss
                 patience_count = 0
                 if save_model and model_name is not None:
-                    save_model_modules(model, optimizer.optimizer, "./ECG_pretraining/models/checkpoints/self-supervised/", model_name, configs)
+                    save_model_modules(model, optimizer.optimizer, "../models/checkpoints/self-supervised/", model_name, configs)
             else: #not improving
                 patience_count += 1
                 if patience_count >= patience:

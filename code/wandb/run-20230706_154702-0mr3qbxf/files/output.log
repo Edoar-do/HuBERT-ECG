@@ -1,0 +1,9 @@
+[32m2023-07-06 15:47:03.662[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m33[39m - [1mEmbedder type linear
+[32m2023-07-06 15:47:03.662[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m34[39m - [1mPositional encoding 1d
+[32m2023-07-06 15:47:03.662[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m35[39m - [1mDecodying type rev
+[32m2023-07-06 15:47:03.663[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m43[39m - [1mcreating datasets for self-supervised pre-training...
+[32m2023-07-06 15:47:07.355[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m50[39m - [1mcreating dataloaders to generata batches...
+[32m2023-07-06 15:47:07.356[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m60[39m - [1mcreating model...
+[32m2023-07-06 15:47:08.100[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m92[39m - [1mMapping model to cuda
+[32m2023-07-06 15:47:08.111[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m103[39m - [1mNumber of parameters: 789506
+[32m2023-07-06 15:47:08.114[39m | [1mINFO    [22m | [36mTrain[39m:[36mtrain_self_supervised[39m:[36m268[39m - [1mEpoch 1/10

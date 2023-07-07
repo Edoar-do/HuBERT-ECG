@@ -45,7 +45,7 @@ class ECGDatasetSelfSupervised(Dataset):
         ecg_path = os.path.join(self.ecg_dir_path, ecg_filename)
         
         ecg_data = np.load(ecg_path)
-        ecg_data = ecg_data[:, :5000] 
+        # ecg_data = medfilt(ecg_data, kernel_size=3) #useful to reduce small
         
         # try:
         #     ecg_data = np.load(ecg_path)
@@ -53,10 +53,11 @@ class ECGDatasetSelfSupervised(Dataset):
         #     logger.error(ecg_path)
         #     return np.nan, age, sex
 		
-        
-        #takes samples alternated in time --> half the samples and less memory usage and faster training
-        #return to the original length after the exploration phase
         if self.reduced:
-            return torch.from_numpy(ecg_data[:, ::2]), age, sex
+            # NOTE: taking samples every 2 samples could not be the best choice because we would include also padding at the end
+            # NOTE: instead, taking the same amount of data but from the beginning of the signal could be better since there would be no padding
+            
+            return torch.from_numpy(ecg_data[:, :2500]), age, sex
+            #return torch.from_numpy(ecg_data[:, ::2]), age, sex
         else:
-            return torch.from_numpy(ecg_data), age, sex
+            return torch.from_numpy(ecg_data[:, :5000]), age, sex

@@ -1,0 +1,127 @@
+[32m2023-07-06 14:28:13.061[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m33[39m - [1mEmbedder type linear
+[32m2023-07-06 14:28:13.062[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m34[39m - [1mPositional encoding 1d
+[32m2023-07-06 14:28:13.062[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m35[39m - [1mDecodying type rev
+[32m2023-07-06 14:28:13.063[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m43[39m - [1mcreating datasets for self-supervised pre-training...
+[32m2023-07-06 14:28:16.703[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m50[39m - [1mcreating dataloaders to generata batches...
+[32m2023-07-06 14:28:16.705[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m60[39m - [1mcreating model...
+[32m2023-07-06 14:28:17.369[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m92[39m - [1mMapping model to cuda
+[32m2023-07-06 14:28:17.374[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m103[39m - [1mNumber of parameters: 789506
+[32m2023-07-06 14:28:17.377[39m | [1mINFO    [22m | [36mTrain[39m:[36mtrain_self_supervised[39m:[36m268[39m - [1mEpoch 1/10
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 89/89 [40:08<00:00, 27.06s/it]
+[32m2023-07-06 15:08:25.728[39m | [1mINFO    [22m | [36mTrain[39m:[36mvalidate_self_supervised[39m:[36m82[39m - [1m	 Validating model performance...
+
+
+
+
+
+
+
+
+
+
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [01:49<00:00, 10.93s/it]
+[32m2023-07-06 15:10:16.410[39m | [32m[1mSUCCESS [39m[22m | [36mTrain[39m:[36mtrain_self_supervised[39m:[36m320[39m - [32m[1mTraining loss: 0.3727912085779597 - Validation loss: 0.2595737427473068
+Traceback (most recent call last):
+  File "Run.py", line 154, in <module>
+    train()
+  File "Run.py", line 109, in train
+    training_loss, validation_loss = train_self_supervised(train_dl,
+  File "/data/ECG_AF/ECG_pretraining/code/Train.py", line 330, in train_self_supervised
+    save_model_modules(model, optimizer.optimizer, "./models/checkpoints/self-supervised/", model_name, configs)
+  File "/data/ECG_AF/ECG_pretraining/code/Train.py", line 119, in save_model_modules
+    torch.save({
+  File "/usr/local/lib/python3.8/dist-packages/torch/serialization.py", line 440, in save
+    with _open_zipfile_writer(f) as opened_zipfile:
+  File "/usr/local/lib/python3.8/dist-packages/torch/serialization.py", line 315, in _open_zipfile_writer
+    return container(name_or_buffer)
+  File "/usr/local/lib/python3.8/dist-packages/torch/serialization.py", line 288, in __init__
+    super().__init__(torch._C.PyTorchFileWriter(str(name)))
+RuntimeError: Parent directory ./models/checkpoints/self-supervised does not exist.

@@ -26,17 +26,28 @@ class Masker(nn.Module):
         super(Masker, self).__init__()
         self.mask_token = mask_token
         self.mask_perc = mask_perc
-
+    
+    # def bert_masking(self, batch_patches):
+    #     # takes (batch_size, n_patches, patch_height, patch_width)
+    #     how_many_patches_to_mask = int(batch_patches.shape[1] * self.mask_perc)
+        
+        
     #todo: this function could be optimized and made more efficient, more vectorial
     def masking(self, batch_patches : torch.Tensor, mask_token):
-        batch_mask_indexer = np.random.choice([True, False], size=batch_patches.shape[0], p=[0.8, 0.2])       
+        #8/10 times I mask an instance, 2/10 I don't
+        #create a boolean indexer telling me which instances to mask
+        batch_mask_indexer = np.random.choice([True, False], size=batch_patches.shape[0], p=[0.8, 0.2])
+        
+        #list that will cointain the lists of indeces of the patches that have been masked per instance       
         batch_indeces = []
-        for b, to_be_masked in enumerate(batch_mask_indexer):
-            if to_be_masked: #some patches of the b instance will probably be masked
+        
+        for i, to_be_masked in enumerate(batch_mask_indexer):
+            if to_be_masked: #some patches of the i instance will probably be masked
+                #mask_perc/100 times I mask a patch, (1-mask_perc)/100 times I leave it as it is
                 patches_mask_indexer = torch.from_numpy(np.random.choice([True, False], 
                     size=batch_patches.shape[1], p=[self.mask_perc, 1-self.mask_perc])).cuda()
-                #mask the patches of the b instance where corresponding patches_mask_indexer is True
-                batch_patches[b] = torch.where(patches_mask_indexer.unsqueeze(1).unsqueeze(2), mask_token, batch_patches[b])
+                #mask the patches of the i instance where corresponding patches_mask_indexer is True
+                batch_patches[i] = torch.where(patches_mask_indexer.unsqueeze(1).unsqueeze(2), mask_token, batch_patches[i])
                 #save the indeces of the patches that have been masked under the form of a list
                 batch_indeces.append(torch.argwhere(patches_mask_indexer).squeeze(1).tolist())
             else:
@@ -77,35 +88,32 @@ class ConvEmbedder(nn.Module):
         self.patch_width = patch_width
         self.embedding_size = embedding_size
         self.name = 'convolutional embedder'
-        #start with larger kernels and strides, then decrease them to capture finer features
+        #start with larger kernels, then decrease them to capture smaller features
         if patch_height == 1:
             self.kernels = [(1, 14), (1, 10)]
-            self.strides = [2, 1]
         elif patch_height == 2 or patch_height == 3:
             self.kernels = [(2, 14), (2, 10)]
-            self.strides = [(1, 2), (1, 1)]
         elif patch_height == 4 or patch_height == 6:
             self.kernels = [(3, 14), (3, 10)]
-            self.strides = [(1, 2), (1, 1)]
         self.conv_embedder = nn.Sequential( 
-            nn.Conv2d(n_patches, 64, self.kernels[0], self.strides[0], padding=2),
+            nn.Conv2d(n_patches, 64, self.kernels[0], padding=2),
             nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(64, 128, self.kernels[0], self.strides[0], padding=2),
+            nn.GELU(),
+            nn.Conv2d(64, 128, self.kernels[0], padding=2),
             nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, self.kernels[1], self.strides[1], padding=0),
+            nn.GELU(),
+            nn.Conv2d(128, 256, self.kernels[1], padding=0),
             nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, self.kernels[1], self.strides[1], padding=0),
+            nn.GELU(),
+            nn.Conv2d(256, 256, self.kernels[1], padding=0),
             nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, self.kernels[1], self.strides[1], padding=0),
+            nn.GELU(),
+            nn.Conv2d(256, 256, self.kernels[1], padding=0),
             nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, n_patches, self.kernels[1], self.strides[1], padding=0),
+            nn.GELU(),
+            nn.Conv2d(256, n_patches, self.kernels[1], padding=0),
             nn.BatchNorm2d(n_patches),
-            nn.ReLU(inplace=True))
+            nn.GELU())
         
         self.linear_projection = nn.Linear(self.get_output_shape(), embedding_size, bias=False)
         
@@ -141,11 +149,11 @@ class PositionalEncoding1D(nn.Module):
         pe[:, 1::2] = torch.cos(pos / denominator)
         if not learnable:
             self.register_buffer("pe", pe)
-        self.pe = pe
+        self.pe = pe.cuda().to(non_blocking=True)
 
     def forward(self, x):
         #x has shape (batch_size, n_patches, d_model)
-        x = x + self.pe.cuda().to(non_blocking=True)
+        x = x + self.pe
         return self.dropout(x) #exits (batch_size, n_patches, d_model)
     
 class PositionalEncoding2D(nn.Module):
@@ -158,10 +166,10 @@ class PositionalEncoding2D(nn.Module):
         pe = self.row_pe + self.col_pe
         if not learnable:
             self.register_buffer('pe', pe)
-        self.pe = pe
+        self.pe = pe.cuda().to(non_blocking=True)
     
     def forward(self, x):
-        x = x + self.pe.cuda().to(non_blocking=True)
+        x = x + self.pe
         return self.dropout(x) #exits (batch_size, n_patches, d_model)
 
     def get_pos_encoding(self, n_patches, d_model):
@@ -202,7 +210,7 @@ class ReversedEncoderAsDecoder(nn.Module):
         self.patch_width = patch_width
         self.n_patches = n_patches
         self.embedder_type = embedder_type
-        self.pe = pe #positional embedding from encoding stage that could help in reconstructing the patches
+        self.pe = pe.cuda() #positional embedding from encoding stage that could help in reconstructing the patches
         
         self.decoder_layer = nn.TransformerEncoderLayer(
             d_model = d_model,
@@ -214,37 +222,34 @@ class ReversedEncoderAsDecoder(nn.Module):
         self.decoder = nn.TransformerEncoder(self.decoder_layer, n_decoding_layers)
   
         if embedder_type == 'linear':
-            self.lin1 = nn.Linear(d_model, patch_width)
-            self.lin2 = nn.Linear(1, patch_height)            
+            self.lin1 = nn.Linear(d_model, patch_width, bias=False)
+            self.lin2 = nn.Linear(1, patch_height, bias=False)            
         elif embedder_type == 'conv':
             if patch_height == 1:
                 self.kernels = [(1, 14), (1, 10)]
-                self.strides = [2, 1]
             elif patch_height == 2 or patch_height == 3:
                 self.kernels = [(2, 14), (2, 10)]
-                self.strides = [(1, 2), (1, 1)]
             elif patch_height == 4 or patch_height == 6:
                 self.kernels = [(3, 14), (3, 10)]
-                self.strides = [(1, 2), (1, 1)]
             self.conv = nn.Sequential(
-                nn.ConvTranspose2d(n_patches, 256, self.kernels[1], self.strides[1], padding=0),
+                nn.ConvTranspose2d(n_patches, 256, self.kernels[1], padding=0),
                 nn.BatchNorm2d(256),
-                nn.ReLU(inplace=True),
-                nn.ConvTranspose2d(256, 256, self.kernels[1], self.strides[1], padding=0),
+                nn.GELU(),
+                nn.ConvTranspose2d(256, 256, self.kernels[1], padding=0),
                 nn.BatchNorm2d(256),
-                nn.ReLU(inplace=True),
-                nn.ConvTranspose2d(256, 256, self.kernels[1], self.strides[1], padding=0),
+                nn.GELU(),
+                nn.ConvTranspose2d(256, 256, self.kernels[1], padding=0),
                 nn.BatchNorm2d(256),
-                nn.ReLU(inplace=True),
-                nn.ConvTranspose2d(256, 128, self.kernels[1], self.strides[1], padding=0),
+                nn.GELU(),
+                nn.ConvTranspose2d(256, 128, self.kernels[1], padding=0),
                 nn.BatchNorm2d(128),
-                nn.ReLU(inplace=True),
-                nn.ConvTranspose2d(128, 64, self.kernels[0], self.strides[0], padding=2),
+                nn.GELU(),
+                nn.ConvTranspose2d(128, 64, self.kernels[0], padding=2),
                 nn.BatchNorm2d(64),
-                nn.ReLU(inplace=True),
-                nn.ConvTranspose2d(64, n_patches, self.kernels[0], self.strides[0], padding=2),
+                nn.GELU(),
+                nn.ConvTranspose2d(64, n_patches, self.kernels[0], padding=2),
                 nn.BatchNorm2d(n_patches),
-                nn.ReLU(inplace=True),
+                nn.GELU(),
             )
             self.w_proj = nn.Linear(self.get_output_shape()[0], patch_width, bias=False)
             self.h_proj = nn.Linear(self.get_output_shape()[1], patch_height, bias=False)
@@ -258,14 +263,14 @@ class ReversedEncoderAsDecoder(nn.Module):
         x.detach().cpu()
         return x.shape[-1], x.shape[-2] #exits (conv_width, conv_height)        
         
-    def forward(x):
+    def forward(self, x):
         #takes (batch_size, n_patches, d_model)
         x = self.decoder(x) #(batch_size, n_patches, d_model)
         if self.pe is not None:
             x = x + self.pe
         if self.embedder_type == 'linear':
             x = x.unsqueeze(2) #(batch_size, n_patches, 1, d_model)
-            x = lin1(x) #(batch_size, n_patches, 1, patch_width)
+            x = self.lin1(x) #(batch_size, n_patches, 1, patch_width)
             x = x.permute(0, 1, 3, 2) #(batch_size, n_patches, patch_width, 1)
             x = self.lin2(x) #(batch_size, n_patches, patch_width, patch_height)
             x = x.permute(0, 1, 3, 2) #(batch_size, n_patches, patch_height, patch_width)
@@ -276,6 +281,7 @@ class ReversedEncoderAsDecoder(nn.Module):
             x = x.permute(0, 1, 3, 2) #(batch_size, n_patches, patch_width, conv_height)
             x = self.h_proj(x) #(batch_size, n_patches, patch_width, patch_height)
             x = x.permute(0, 1, 3, 2) #(batch_size, n_patches, patch_height, patch_width)
+        return x
             
 class FullyConvDecoder(nn.Module):
     def __init__(self, n_patches, d_model, patch_height, patch_width):
@@ -291,19 +297,19 @@ class FullyConvDecoder(nn.Module):
         self.conv_decoder = nn.Sequential(
             nn.ConvTranspose2d(n_patches, n_patches, kernel_size=3, stride=2),
             nn.BatchNorm2d(n_patches),
-            nn.ReLU(inplace=True),
+            nn.GELU(),
             nn.ConvTranspose2d(n_patches, n_patches, kernel_size=3, stride=2),
             nn.BatchNorm2d(n_patches),
-            nn.ReLU(inplace=True),
+            nn.GELU(),
             nn.ConvTranspose2d(n_patches, n_patches, kernel_size=3, stride=2),
             nn.BatchNorm2d(n_patches),
-            nn.ReLU(inplace=True),
+            nn.GELU(),
             nn.ConvTranspose2d(n_patches, n_patches, kernel_size=3, stride=2),
             nn.BatchNorm2d(n_patches),
-            nn.ReLU(inplace=True),
+            nn.GELU(),
             nn.ConvTranspose2d(n_patches, n_patches, kernel_size=3, stride=2),
             nn.BatchNorm2d(n_patches),
-            nn.ReLU(inplace=True)
+            nn.GELU()
         )
 
         self.w_proj = nn.Linear(self.get_output_shape()[0], patch_width, bias=False)
@@ -371,7 +377,7 @@ class NonAutoregressiveTransformerDecoderLayer(nn.Module):
 
         self.ff = nn.Sequential(
             nn.Linear(d_model, dim_ff),
-            nn.ReLU(inplace=True),
+            nn.GELU(),
             nn.Dropout(p_dropout),
             nn.Linear(dim_ff, d_model)
         )

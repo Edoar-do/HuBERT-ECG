@@ -1,106 +1,49 @@
 program: Run.py
-method: bayes
+method: grid
 metric:
-  goal: minimize
   name: validation_loss
+  goal: minimize
 parameters:
   patch_height:
-    distribution: categorical
-    values:
-    - 1
-    - 2
-    - 3
-    - 6
+    values: [1, 2, 3]
   patch_width:
-    distribution: categorical
-    values:
-    - 250
-    - 500
+    values: [100, 250]
   mask_perc:
-    distribution: uniform
-    min: 0.15
-    max: 0.75
+    value: 0.3
   d_model:
-    distribution: categorical
-    values:
-    - 64
-    - 128
-    - 256
-    - 512
+    value: 128
   epochs:
-    distribution: categorical
-    values:
-    - 10
-    - 20
-    - 25
-  n_encoder_layers:
-    distribution: int_uniform
-    min: 2
-    max: 8
-  n_heads:
-    distribution: categorical
-    values:
-    - 2
-    - 4
-    - 8
-  dim_ff:
-    distribution: categorical
-    values:
-    - 64
-    - 128
-    - 256
-    - 512
-  hidden_dim: #for MLP classifier in supervised training
-    distribution: categorical
-    values:
-    - 64
-    - 128
-    - 256
-    - 512
-  pos_enc_type:
-    distribution: categorical
-    values:
-    - 1d
-    - 2d
-  decoding_type:
-    distribution: categorical
-    values:
-    - nar
-    - enc
-    - fcn
-  distributed:
-    distribution: constant
-    value: False
-  num_workers:
-    distribution: constant
-    value: 4
-  warmup:
-    distribution: int_uniform
-    min: 1000
-    max: 10000
-  n_leads:
-    distribution: constant
-    value: 12
-  window:
-    distribution: constant
-    value: 2500
-  reduced: # if True, then reduce size of datasets
-    distribution: constant
-    value: True
-  n_classes:
-    distribution: constant
-    value: 9
-  batch_size:
-    distribution: constant
-    value: 1024
-  patience:
     distribution: constant
     value: 10
-  early_stopping:
-    distribution: constant
+  n_encoding_layers:
+    values: [2, 3]  
+  n_heads:
+    values: [2, 4]
+  dim_ff:
+    values: [128, 256]
+  pos_enc_type:
+    values: ["1d", "2d"]
+  decoding_type:
+    values: ["rev", "nar", "fcn"]
+  distributed:
+    value: False
+  num_workers:
+    value: 4
+  warmup:
+    value: 4000
+  n_leads:
+    value: 12
+  window:
+    value: 2500
+  reduced: 
     value: True
-  embedder_type:
-    distribution: categorical
-    values:
-    - conv
-    - linear
+  n_classes:
+    value: 9
+  batch_size:
+    value: 8192
+  patience:
+    value: 10
+  early_stopping:
+    value: True
+  embedding_type:
+    values: ["linear", "conv"]

@@ -1,0 +1,25 @@
+[32m2023-07-06 15:45:13.965[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m33[39m - [1mEmbedder type linear
+[32m2023-07-06 15:45:13.965[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m34[39m - [1mPositional encoding 1d
+[32m2023-07-06 15:45:13.965[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m35[39m - [1mDecodying type rev
+[32m2023-07-06 15:45:13.966[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m43[39m - [1mcreating datasets for self-supervised pre-training...
+[32m2023-07-06 15:45:17.707[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m50[39m - [1mcreating dataloaders to generata batches...
+[32m2023-07-06 15:45:17.708[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m60[39m - [1mcreating model...
+[32m2023-07-06 15:45:18.880[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m92[39m - [1mMapping model to cuda
+[32m2023-07-06 15:45:19.491[39m | [1mINFO    [22m | [36m__main__[39m:[36mtrain[39m:[36m103[39m - [1mNumber of parameters: 789506
+[32m2023-07-06 15:45:19.495[39m | [1mINFO    [22m | [36mTrain[39m:[36mtrain_self_supervised[39m:[36m268[39m - [1mEpoch 1/10
+
+  0%|                                                                                                                                                                     | 0/89 [00:57<?, ?it/s]
+Traceback (most recent call last):
+  File "Run.py", line 152, in <module>
+    train()
+  File "Run.py", line 109, in train
+    training_loss, validation_loss = train_self_supervised(train_dl,
+  File "/data/ECG_AF/ECG_pretraining/code/Train.py", line 304, in train_self_supervised
+    scaler.scale(loss).backward()
+  File "/usr/local/lib/python3.8/dist-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/usr/local/lib/python3.8/dist-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/usr/local/lib/python3.8/dist-packages/torch/utils/data/_utils/signal_handling.py", line 66, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 3161) is killed by signal: Bus error. It is possible that dataloader's workers are out of shared memory. Please try to raise your shared memory limit.

@@ -1,0 +1,44 @@
+wandb_version: 1
+
+batch_size:
+  value: 8192
+d_model:
+  value: 128
+decoding_type:
+  value: rev
+dim_ff:
+  value: 128
+distributed:
+  value: false
+early_stopping:
+  value: true
+embedding_type:
+  value: conv
+epochs:
+  value: 10
+mask_perc:
+  value: 0.3
+n_classes:
+  value: 9
+n_encoding_layers:
+  value: 2
+n_heads:
+  value: 3
+n_leads:
+  value: 12
+num_workers:
+  value: 4
+patch_height:
+  value: 2
+patch_width:
+  value: 500
+patience:
+  value: 10
+pos_enc_type:
+  value: 1d
+reduced:
+  value: true
+warmup:
+  value: 4000
+window:
+  value: 2500
