@@ -69,13 +69,13 @@ def train():
                         learnable_pos_enc=True,
                         p_dropout=.1, 
                         n_heads=wandb.config['n_heads'],
-                        dim_ff=wandb.config['dim_ff'],
+                        dim_ff=wandb.config['d_model'] * wandb.config['dim_ff_ratio'],
                         n_encoding_layers=wandb.config['n_encoding_layers'],  
                         decoding_type=wandb.config['decoding_type'],
                         pos_enc_type=wandb.config['pos_enc_type'],
                         hiddem_dim=None,
                         n_classes=wandb.config['n_classes'],
-                        dim_ff_decoding = wandb.config['dim_ff'],
+                        dim_ff_decoding = wandb.config['d_model'] * wandb.config['dim_ff_ratio'],
                         n_decoding_heads = wandb.config['n_heads'],
                         n_decoding_layers = wandb.config['n_encoding_layers'])
 

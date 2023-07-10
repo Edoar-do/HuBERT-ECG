@@ -117,7 +117,7 @@ def test_self_supervised(test_dataloader, model, loss_fn, configs, *metrics):
 
 
     patcher = Patcher((configs['patch_height'], configs['patch_width'])).cuda() 
-    masker = Masker(mask_token, configs['mask_perc']).cuda() 
+    masker = Masker(mask_token, configs['to_take_perc'], configs['mask_or_same_perc']).cuda() 
 
     
     model.eval()

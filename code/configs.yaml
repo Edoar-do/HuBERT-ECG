@@ -8,8 +8,10 @@ parameters:
     values: [1, 2, 3]
   patch_width:
     values: [100, 250]
-  mask_perc:
-    value: 0.3
+  to_take_perc:
+    value: 0.15
+  mask_or_same_perc:
+    value: 0.7
   d_model:
     value: 128
   epochs:
@@ -19,8 +21,8 @@ parameters:
     values: [2, 3]  
   n_heads:
     values: [2, 4]
-  dim_ff:
-    values: [128, 256]
+  dim_ff_ratio:
+    values: [2, 3]
   pos_enc_type:
     values: ["1d", "2d"]
   decoding_type:
@@ -40,7 +42,7 @@ parameters:
   n_classes:
     value: 9
   batch_size:
-    value: 8192
+    value: 4096
   patience:
     value: 10
   early_stopping:

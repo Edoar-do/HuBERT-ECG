@@ -60,7 +60,6 @@ def validate_supervised(val_dataloader, model, loss_fn, patcher, *metrics):
         epoch_losses.append(loss.item())
 
     val_loss = np.mean(epoch_losses)
-    wandb.log({"val_loss" : val_loss}) # redundant, already done in train 
     return val_loss, epoch_lbls, epoch_probs #validation loss for a given epoch, labels and probs for a given epoch
 
 def validate_self_supervised(val_dataloader, model, loss_fn, patcher, masker, *metrics):
@@ -106,7 +105,6 @@ def validate_self_supervised(val_dataloader, model, loss_fn, patcher, masker, *m
 
     val_loss = np.mean(epoch_losses)
     if isinstance(loss_fn, PatchRecLoss):
-        wandb.log({"val_loss" : val_loss}) # redundant log, already done in train method
         return np.mean(epoch_losses) #validation loss for a given epoch
 
 def save_model_modules(model, optimizer, path, model_name, configs):
@@ -259,7 +257,7 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
     mask_token = torch.Tensor([([-1] * (configs['patch_width']//2)) + ([1] * (configs['patch_width']//2))] * configs['patch_height']).to(dtype=torch.float).cuda()
 
     patcher = Patcher((configs['patch_height'], configs['patch_width'])).cuda()
-    masker = Masker(mask_token, configs['mask_perc']).cuda() 
+    masker = Masker(mask_token, configs['to_take_perc'], configs['mask_or_same_perc']).cuda() 
 
     wandb.watch(model, rec_loss_fn, log="all", log_freq=10)
     
