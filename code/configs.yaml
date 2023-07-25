@@ -1,5 +1,5 @@
 program: Run.py
-method: grid
+method: bayes
 metric:
   name: validation_loss
   goal: minimize
@@ -13,7 +13,7 @@ parameters:
   mask_or_same_perc:
     value: 0.7
   d_model:
-    value: 128
+    values: [128, 256, 512]
   epochs:
     distribution: constant
     value: 10
@@ -25,8 +25,22 @@ parameters:
     values: [2, 3]
   pos_enc_type:
     values: ["1d", "2d"]
+  learnable_pos_enc:
+    values: [True, False]
   decoding_type:
-    values: ["rev", "nar", "fcn"]
+    value: "rev"
+  lr:
+    distribution: uniform
+    max: 0.001
+    min: 0.0001
+  beta1:
+    distribution: uniform
+    max: 0.95
+    min: 0.9
+  beta2:
+    distribution: uniform
+    max: 0.99
+    min: 0.95
   distributed:
     value: False
   num_workers:
@@ -44,7 +58,7 @@ parameters:
   batch_size:
     value: 4096
   patience:
-    value: 10
+    value: 8
   early_stopping:
     value: True
   embedding_type:

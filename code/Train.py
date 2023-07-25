@@ -5,19 +5,18 @@ from torch import nn
 import matplotlib.pyplot as plt
 import wandb
 import numpy as np
-from Model import FullModel, Patcher, Masker
+from Model import FullModel
 from torch.cuda.amp import autocast, GradScaler
 from Losses import PatchRecLoss
 from loguru import logger
 from Test import visual_comparing
 
-def validate_supervised(val_dataloader, model, loss_fn, patcher, *metrics):
+def validate_supervised(val_dataloader, model, loss_fn, *metrics):
     '''Validate a `model` in a supervised fashion once per epoch using data fetched by `val_dataloader` according to `loss_fn` function and any additional `metric`.
     Params:
         - `val_dataloader`: instance of torch.utils.data.DataLoader that fetches data from validation set
         - `model`: the model to validate
         - `loss_fn`: the loss function to validate the model on
-        - `patcher`: instance of Patcher class to patchify the input data
         - `metrics`: any additional metrics to validate the model on
     Returns:
         - validation loss for the epoch
@@ -39,7 +38,6 @@ def validate_supervised(val_dataloader, model, loss_fn, patcher, *metrics):
         batch_ecg_data, batch_age, batch_sex, batch_labels = tuple(zip(*batch))
 
         batch_ecg_data = torch.stack(batch_ecg_data, dim=0).cuda().to(dtype=torch.float)
-        batch_patches, _ = patcher(batch_ecg_data)
 
         # normalize age
 
@@ -50,7 +48,7 @@ def validate_supervised(val_dataloader, model, loss_fn, patcher, *metrics):
         
         with torch.no_grad():
             with autocast():
-                pred = model(batch_patches, batch_age, batch_sex)
+                pred = model(batch_ecg_data, batch_age, batch_sex)
                 loss = loss_fn(pred, batch_labels)
                 probs = sigmoid(pred).detach().cpu().numpy()
                 lbls = batch_labels.detach().cpu().numpy()
@@ -62,14 +60,12 @@ def validate_supervised(val_dataloader, model, loss_fn, patcher, *metrics):
     val_loss = np.mean(epoch_losses)
     return val_loss, epoch_lbls, epoch_probs #validation loss for a given epoch, labels and probs for a given epoch
 
-def validate_self_supervised(val_dataloader, model, loss_fn, patcher, masker, *metrics):
+def validate_self_supervised(val_dataloader, model, loss_fn, *metrics):
     '''Validate a `model` in a self_supervised fashion once per epoch using data fetched by `val_dataloader` according to `loss_fn` function and any additional `metric`.
     Params:
         - `val_dataloader`: instance of torch.utils.data.DataLoader that fetches data from validation set
         - `model`: the model to validate
         - `loss_fn`: the loss function to validate the model on
-        - `patcher`: instance of Patcher class to patchify the input data
-        - `masker`: instance of Masker class to apply masking to patches
         - `metrics`: any additional metrics to validate the model on
     Returns:
         - validation loss for the epoch
@@ -88,15 +84,13 @@ def validate_self_supervised(val_dataloader, model, loss_fn, patcher, masker, *m
         #batch_age, batch_sex are tuples on nan (float) that are batch_size long in case of self-supervised (supervised) training
 
         batch_ecg_data = torch.stack(batch_ecg_data, dim=0).cuda().to(dtype=torch.float) #--> (bs, 12, 5000)
-        batch_patches, unfolded_shape = patcher (batch_ecg_data)
 
         if isinstance(loss_fn, PatchRecLoss):
-            batch_masked_patches, batch_indeces_masked_patches = masker(batch_patches.detach().clone())
             batch_age = torch.Tensor(batch_age).cuda().to(dtype=torch.float) # (batch_size, 1)
             batch_sex = torch.Tensor(batch_sex).cuda().to(dtype=torch.float) # (batch_size, 1)
             with torch.no_grad():
                 with autocast():
-                    pred = model(batch_masked_patches, batch_age, batch_sex)
+                    pred, batch_patches, batch_indeces_masked_patches, unfolded_shape = model(batch_ecg_data, batch_age, batch_sex)
                     loss, batch_rec_patches, batch_real_patches = loss_fn(pred, batch_patches, batch_indeces_masked_patches)
                     wandb.log({"Example of reconstruction" : wandb.Image(visual_comparing(batch_rec_patches.cpu(), batch_real_patches.cpu(), batch_masked_patches.cpu(), unfolded_shape))}) #logging examples of reconstructed patches
 
@@ -138,7 +132,6 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
         - validation loss (list[float])
     '''
     
-    patcher = Patcher((configs['patch_height'], configs['patch_width'])).cuda()
 
     patience_count = 0
     best_val_loss = np.inf
@@ -179,11 +172,9 @@ def train_supervised(train_datalaoder, model : FullModel, optimizer, epochs, val
             batch_ecg_data = torch.stack(batch_ecg_data, dim=0).cuda().to(dtype=torch.float)
             batch_labels = torch.stack(batch_labels, dim=0).cuda().to(dtype=torch.float)
 
-            batch_patches, _ = patcher(batch_ecg_data) # (batch_size, 12, 5000)
-
             # compute prediction and loss
             with autocast():
-                prediction_logits = model(batch_patches, batch_age, batch_sex)
+                prediction_logits = model(batch_ecg_data, batch_age, batch_sex)
                 loss = bce_loss_fn(prediction_logits, batch_labels)
 
             #backpropagation
@@ -253,11 +244,6 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
     patience_count = 0 #global var initialized here, once and forever
     best_val_loss = np.inf #global var initialized here, once and forever
     scaler = GradScaler()
-    
-    mask_token = torch.Tensor([([-1] * (configs['patch_width']//2)) + ([1] * (configs['patch_width']//2))] * configs['patch_height']).to(dtype=torch.float).cuda()
-
-    patcher = Patcher((configs['patch_height'], configs['patch_width'])).cuda()
-    masker = Masker(mask_token, configs['to_take_perc'], configs['mask_or_same_perc']).cuda() 
 
     wandb.watch(model, rec_loss_fn, log="all", log_freq=10)
     
@@ -282,20 +268,9 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
             batch_ecg_data = torch.stack(batch_ecg_data, dim=0).cuda().to(dtype=torch.float)
             #now it's a torch.Tensor (batch_size, 12, 5000)
 
-            batch_patches, _ = patcher (batch_ecg_data) # (batch_size, n_patches, patch_height, patch_width)
-            batch_masked_patches, batch_indeces_masked_patches = masker(batch_patches.detach().clone())
-            
-            #all the above tensors should be on cuda since all deriva from batch_ecg_data that is on cuda
-
-            assert batch_patches.shape == batch_masked_patches.shape
-            assert batch_patches.shape[0] == len(batch_indeces_masked_patches)
-            
-            #assert that batch_patches are different from batch_masked_patches to see if masker is working
-            assert not torch.all(torch.eq(batch_patches, batch_masked_patches))
-
             # compute prediction and loss
             with autocast():
-                prediction = model(batch_masked_patches, batch_age, batch_sex)
+                prediction, batch_patches, batch_indeces_masked_patches, unfolded_shape = model(batch_ecg_data, batch_age, batch_sex)
                 loss, batch_rec_patches, batch_real_patches = rec_loss_fn(prediction, batch_patches, batch_indeces_masked_patches)
             
             #backpropagation
@@ -312,7 +287,7 @@ def train_self_supervised(train_datalaoder, model, optimizer, epochs, val_datalo
         #validation
         if configs['distributed']:
             val_dataloader.sampler.set_epoch(i)
-        epoch_val_loss = validate_self_supervised(val_dataloader, model, rec_loss_fn, patcher, masker)
+        epoch_val_loss = validate_self_supervised(val_dataloader, model, rec_loss_fn)
         validation_loss.append(epoch_val_loss)
 
         logger.success(f"Training loss: {training_loss[-1]} - Validation loss: {validation_loss[-1]}")

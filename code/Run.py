@@ -60,13 +60,18 @@ def train():
     logger.info("creating model...")
     
     n_patches = (wandb.config['n_leads'] * wandb.config['window']) // (wandb.config['patch_height'] * wandb.config['patch_width'])
+    mask_token = torch.Tensor([([-1] * (wandb.config['patch_width']//2)) + ([1] * (wandb.config['patch_width']//2))] * wandb.config['patch_height']).to(dtype=torch.float).cuda()
 
-    model = FullModel(embedding_type=wandb.config['embedding_type'],
+
+    model = FullModel(mask_token=mask_token,
+                        to_take_perc=wandb.config['to_take_perc'],
+                        mask_or_same_perc=wandb.config['mask_or_same_perc'],
+                        embedding_type=wandb.config['embedding_type'],
                         patch_height=wandb.config['patch_height'],
                         patch_width=wandb.config['patch_width'],
                         n_patches=n_patches,
                         d_model=wandb.config['d_model'], 
-                        learnable_pos_enc=True,
+                        learnable_pos_enc=wandb.config['learnable_pos_enc'],
                         p_dropout=.1, 
                         n_heads=wandb.config['n_heads'],
                         dim_ff=wandb.config['d_model'] * wandb.config['dim_ff_ratio'],
@@ -92,18 +97,12 @@ def train():
         logger.info("Mapping model to cuda")
         model = model.cuda()
 
-    # print(model, "\n")
-
-    #xavier inatialization
-    for p in model.parameters():
-        if p.dim() > 1:
-            nn.init.xavier_uniform_(p)
 
     #printing number of parameters
     logger.info(f"Number of parameters: {sum(p.data.nelement() for p in model.parameters())}")
 
     #start training
-    optimizer = NoamOpt(wandb.config['d_model'], 1, wandb.config['warmup'], torch.optim.Adam(model.parameters(), lr=1.5e-4, betas=(0.9, 0.95), eps=1e-9))
+    optimizer = NoamOpt(wandb.config['d_model'], 1, wandb.config['warmup'], torch.optim.Adam(model.parameters(), lr=wandb.config['lr'], betas=(wandb.config['beta1'], wandb.config['beta2']), eps=1e-9))
 
     model_name = wandb.config['embedding_type'] + "_" + wandb.config['pos_enc_type'] + "_" + wandb.config['decoding_type'] + "_" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     training_loss, validation_loss = train_self_supervised(train_dl,
@@ -118,7 +117,7 @@ def train():
                                                            model_name=model_name)
 
     #testing
-    test_loss = test_self_supervised(test_dl, model, PatchRecLoss(), wandb.config)
+    test_loss = test_self_supervised(test_dl, model, PatchRecLoss())
     
 
     #wandb.finish() #necesasry in notebooks
@@ -140,9 +139,9 @@ if __name__ == "__main__":
     #     logger.error("Configuration file does not exist or it is not a yaml file")
     #     exit(1)
 
-    # if not torch.cuda.is_available():
-    #     logger.error("CUDA not available. CPU training not supported")
-    #     exit(1)
+    if not torch.cuda.is_available():
+        logger.error("CUDA not available. CPU training not supported")
+        exit(1)
     
     # }
 

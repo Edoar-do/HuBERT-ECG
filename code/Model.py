@@ -4,6 +4,7 @@ from torch import nn
 import math
 import numpy as np
 from torch.cuda.amp import autocast
+from loguru import logger
 
 ### <---- patcher and masker ---> ###
 
@@ -18,8 +19,8 @@ class Patcher(nn.Module):
         assert n_leads % self.h == 0
         assert window % self.w == 0
 
-        out = ecg_data.unfold(1, self.h, self.h).unfold(2, self.w, self.w).reshape(bs, -1, self.h, self.w) #(batch_size, n_patches, patch_height, patch_width)
-        return out, out.shape #(batch_size, n_patches, patch_height,  patch_width)
+        out = ecg_data.unfold(1, self.h, self.h).unfold(2, self.w, self.w)
+        return out.reshape(bs, -1, self.h, self.w), out.shape #(batch_size, n_patches, patch_height,  patch_width) + unfolded_shape necessary for visual_comparing()
     
 class Masker(nn.Module):
     def __init__(self, mask_token, to_take_perc, mask_or_same_perc):
@@ -64,8 +65,7 @@ class SimpleLinearEmbedder(nn.Module):
         self.name = 'linear projector'
     
     def forward(self, x):
-        #(batch_size, n_patches, patch_height, patch_width)
-        x = x.view(-1, self.n_patches, self.patch_height * self.patch_width) # like concatenating every row in each patch so that each new patch has shape (1, patch_width * patch_height)
+        #if flattened (batch_size, n_patches, patch_width * patch_height)
         return self.linear_embedding(x) #outputs (batch_size, n_patches, embedding_size)
     
 class ConvEmbedder(nn.Module):
@@ -78,31 +78,16 @@ class ConvEmbedder(nn.Module):
         self.patch_width = patch_width
         self.embedding_size = embedding_size
         self.name = 'convolutional embedder'
-        #start with larger kernels, then decrease them to capture smaller features
-        if patch_height == 1:
-            self.kernels = [(1, 14), (1, 10)]
-        elif patch_height == 2 or patch_height == 3:
-            self.kernels = [(2, 14), (2, 10)]
-        elif patch_height == 4 or patch_height == 6:
-            self.kernels = [(3, 14), (3, 10)]
-        self.conv_embedder = nn.Sequential( 
-            nn.Conv2d(n_patches, 64, self.kernels[0], padding=2),
-            nn.BatchNorm2d(64),
+        
+        self.conv_embedder = nn.Sequential(
+            nn.Conv1d(n_patches, n_patches, 15),
+            nn.BatchNorm1d(n_patches),
             nn.GELU(),
-            nn.Conv2d(64, 128, self.kernels[0], padding=2),
-            nn.BatchNorm2d(128),
+            nn.Conv1d(n_patches, n_patches, 11),
+            nn.BatchNorm1d(n_patches),
             nn.GELU(),
-            nn.Conv2d(128, 256, self.kernels[1], padding=0),
-            nn.BatchNorm2d(256),
-            nn.GELU(),
-            nn.Conv2d(256, 256, self.kernels[1], padding=0),
-            nn.BatchNorm2d(256),
-            nn.GELU(),
-            nn.Conv2d(256, 256, self.kernels[1], padding=0),
-            nn.BatchNorm2d(256),
-            nn.GELU(),
-            nn.Conv2d(256, n_patches, self.kernels[1], padding=0),
-            nn.BatchNorm2d(n_patches),
+            nn.Conv1d(n_patches, n_patches, 9),
+            nn.BatchNorm1d(n_patches),
             nn.GELU())
         
         self.linear_projection = nn.Linear(self.get_output_shape(), embedding_size)
@@ -114,21 +99,20 @@ class ConvEmbedder(nn.Module):
         #get output shape of conv_embedder from a random tensor with shape (bs, n_patches, patch_height, patch_width)
         #this method is called only once in the init methhod, which is called only once in the whole training process, i.e. when the model is created
         bs = 1
-        x = torch.rand((bs, self.n_patches, self.patch_height, self.patch_width)).to(non_blocking=True)
+        x = torch.rand((bs, self.n_patches, self.patch_height * self.patch_width)).to(non_blocking=True)
         x = self.conv_embedder(x)
         x.detach().cpu()
         
-        return x.shape[2] * x.shape[3]
+        return x.shape[2]
 
     def forward(self, x):
-        x = self.conv_embedder(x) #(batch_size, n_patches, h_out == x.shape[2], w_out == x.shape[3])
-        #Linear projection to map cnn outputs size to embedding size
-        x = x.view(x.shape[0], x.shape[1], x.shape[2] * x.shape[3]) #(batch_size, n_patches, h_out x w_out)
+        #if flattened (batch_size, num_patches, patch_height * patch_width)
+        x = self.conv_embedder(x) #outputs (batch_size, n_patches, h_out == x.shape[2], w_out == x.shape[3])
         x = self.linear_projection (x) #(batch_size, n_patches , embedding_size == d_model)
         return x 
     
 class PositionalEncoding1D(nn.Module):
-    def __init__(self, d_model, n_patches, p_dropout, max_length = 5000, learnable = False):
+    def __init__(self, d_model, n_patches, p_dropout, max_length = 5000):
         super(PositionalEncoding1D, self).__init__()
         self.dropout = nn.Dropout(p_dropout)
         self.name = 'positional encoding 1d'
@@ -137,8 +121,6 @@ class PositionalEncoding1D(nn.Module):
         denominator = torch.exp(torch.arange(0, d_model, 2) * (math.log(10000.0)/d_model))
         pe[:, 0::2] = torch.sin(pos / denominator)
         pe[:, 1::2] = torch.cos(pos / denominator)
-        if not learnable:
-            self.register_buffer("pe", pe)
         self.pe = pe.cuda().to(non_blocking=True)
 
     def forward(self, x):
@@ -147,15 +129,13 @@ class PositionalEncoding1D(nn.Module):
         return self.dropout(x) #exits (batch_size, n_patches, d_model)
     
 class PositionalEncoding2D(nn.Module):
-    def __init__(self, d_model, n_patches, p_dropout, max_length = 5000, learnable = False):
+    def __init__(self, d_model, n_patches, p_dropout, max_length = 5000):
         super(PositionalEncoding2D, self).__init__()
         self.dropout = nn.Dropout(p_dropout)
         self.name = 'positional encoding 2d'
         self.row_pe = self.get_pos_encoding(n_patches, d_model)
         self.col_pe = self.get_pos_encoding(d_model, n_patches).transpose(0, 1)
         pe = self.row_pe + self.col_pe
-        if not learnable:
-            self.register_buffer('pe', pe)
         self.pe = pe.cuda().to(non_blocking=True)
     
     def forward(self, x):
@@ -170,6 +150,23 @@ class PositionalEncoding2D(nn.Module):
             pe[:, 1::2] = torch.cos(pos / denominator)
             return pe
 
+class LearnablePositionalEncoding1D(nn.Module):
+    def __init__(self, d_model, num_patches):
+        super(LearnablePositionalEncoding1D, self).__init__()
+        self.pe = nn.Parameter(torch.zeros(num_patches, d_model))
+    def forward(self, embeddings):
+        return embeddings + self.pe
+    
+class LearnablePositionalEncoding2D(nn.Module):
+    def __init__(self, d_model, num_patches):
+        super(LearnablePositionalEncoding2D, self).__init__()
+        self.row_pe = nn.Parameter(torch.zeros(num_patches, d_model)) 
+        self.col_pe = nn.Parameter(torch.zeros(d_model, num_patches).T)
+        
+    def forward(self, embeddings):
+        return embeddings + self.row_pe + self.col_pe
+ 
+    
 class TransfomerEncoder(nn.Module):
     def __init__(self, d_model, n_heads, dim_ff, p_dropout, n_encoding_layers):
         super(TransfomerEncoder, self).__init__()
@@ -182,16 +179,16 @@ class TransfomerEncoder(nn.Module):
         self.name = 'transformer encoder'        
 
     def forward(self, x):
-        # takes (batch_size, n_patches, d_model)
-        return self.transformer_encoder(x) # outputs (batch_size, n_patches , d_model == embedding_size)
+        # takes (batch_size, n_patches+1, d_model)
+        return self.transformer_encoder(x) # outputs (batch_size, n_patches+1, d_model)
     
 ###<----- End of encoding stakck ----->###
     
 ###<----- Start of decoding stack ---->###
 
-class ReversedEncoderAsDecoder(nn.Module):
-    def __init__(self, d_model, p_dropout, dim_ff, n_heads, patch_height, patch_width, n_patches, n_decoding_layers, embedder_type, pe = None):
-        super(ReversedEncoderAsDecoder, self).__init__()
+class EncoderAsDecoder(nn.Module):
+    def __init__(self, d_model, p_dropout, dim_ff, n_heads, patch_height, patch_width, n_patches, n_decoding_layers):
+        super(EncoderAsDecoder, self).__init__()
         self.d_model = d_model
         self.p_dropout = p_dropout
         self.dim_ff = dim_ff
@@ -199,9 +196,7 @@ class ReversedEncoderAsDecoder(nn.Module):
         self.patch_height = patch_height
         self.patch_width = patch_width
         self.n_patches = n_patches
-        self.embedder_type = embedder_type
-        self.pe = pe.cuda() #positional embedding from encoding stage that could help in reconstructing the patches
-        
+                
         self.decoder_layer = nn.TransformerEncoderLayer(
             d_model = d_model,
             nhead = n_heads,
@@ -211,74 +206,14 @@ class ReversedEncoderAsDecoder(nn.Module):
         
         self.decoder = nn.TransformerEncoder(self.decoder_layer, n_decoding_layers)
   
-        self.lin1 = nn.Linear(d_model, patch_width)
-        self.lin2 = nn.Linear(1, patch_height)
-            
-        self.name = "encoder as decoder"   
-        
+        self.lin1 = nn.Linear(d_model, patch_width*patch_height)
+        self.name = "encoder as decoder"
+    
     def forward(self, x):
         #takes (batch_size, n_patches, d_model)
         x = self.decoder(x) #(batch_size, n_patches, d_model)
-        if self.pe is not None:
-            x = x + self.pe
-        x = x.unsqueeze(2) #(batch_size, n_patches, 1, d_model)
-        x = self.lin1(x) #(batch_size, n_patches, 1, patch_width)
-        x = x.permute(0, 1, 3, 2) #(batch_size, n_patches, patch_width, 1)
-        x = self.lin2(x) #(batch_size, n_patches, patch_width, patch_height)
-        x = x.permute(0, 1, 3, 2) #(batch_size, n_patches, patch_height, patch_width)
+        x = self.lin1(x) #(batch_size, n_patches, patch_height*patch_width)
         return x
-            
-class FullyConvDecoder(nn.Module):
-    def __init__(self, n_patches, d_model, patch_height, patch_width):
-        super(FullyConvDecoder, self).__init__()
-        self.n_patches = n_patches
-        self.d_model = d_model
-        self.patch_height = patch_height
-        self.patch_width = patch_width
-        self.name = 'fully convolutional decoder'
-
-        # ? could be necessary to improve this decoder architecture and hyperparams. This is just a first try
-
-        self.conv_decoder = nn.Sequential(
-            nn.ConvTranspose2d(n_patches, n_patches, kernel_size=3, stride=2),
-            nn.BatchNorm2d(n_patches),
-            nn.GELU(),
-            nn.ConvTranspose2d(n_patches, n_patches, kernel_size=3, stride=2),
-            nn.BatchNorm2d(n_patches),
-            nn.GELU(),
-            nn.ConvTranspose2d(n_patches, n_patches, kernel_size=3, stride=2),
-            nn.BatchNorm2d(n_patches),
-            nn.GELU(),
-            nn.ConvTranspose2d(n_patches, n_patches, kernel_size=3, stride=2),
-            nn.BatchNorm2d(n_patches),
-            nn.GELU(),
-            nn.ConvTranspose2d(n_patches, n_patches, kernel_size=3, stride=2),
-            nn.BatchNorm2d(n_patches),
-            nn.GELU()
-        )
-
-        self.w_proj = nn.Linear(self.get_output_shape()[0], patch_width)
-        self.h_proj = nn.Linear(self.get_output_shape()[1], patch_height)
-
-        # self.conv_decoder.cpu()
-
-    def get_output_shape(self):
-        x = torch.randn(1, self.n_patches, self.d_model).to(non_blocking=True)
-        x = x.unsqueeze(2) #adding height dim so to make deconv2d feasible
-        x = self.conv_decoder(x)
-        x.detach().cpu()
-        return x.shape[-1], x.shape[-2] #exits (conv_width, conv_height)
-            
-
-    def forward(self, x):
-        # adding height dim so to make deconv2d feasible
-        #takes (batch_size, n_patches, d_model)
-        x = x.unsqueeze(2)
-        x = self.conv_decoder(x) #exits (batch_size, n_patches, conv_height, conv_width)
-        x = self.w_proj(x)# (batch_size, n_patches, conv_heigth, patch_width)
-        x = x.permute(0, 1, 3, 2) # (batch_size, n_patches, patch_width, conv_heigth)
-        x = self.h_proj(x)# (batch_size, n_patches, patch_width, patch_height)
-        return x.permute(0, 1, 3, 2) # (batch_size, n_patches, patch_height, patch_width)
 
 class MLPClassifier(nn.Module):
     def __init__(self, d_model, n_classes, p_dropout, hidden_dim):
@@ -302,82 +237,14 @@ class MLPClassifier(nn.Module):
         # sex = sex.to(x.device, non_blocking=True)
         x = torch.cat([x, age, sex], dim=1)
         return self.classifier(x) # (batch_size, n_classes), these are logits
-
-class NonAutoregressiveTransformerDecoderLayer(nn.Module):
-    def __init__(self, d_model, p_dropout, n_heads, dim_ff):
-        super(NonAutoregressiveTransformerDecoderLayer, self).__init__()
-        self.d_model = d_model
-        self.p_dropout = p_dropout
-        self.dim_ff = dim_ff
-        self.n_heads = n_heads
-
-        self.norm1 = nn.LayerNorm(d_model)
-        self.norm2 = nn.LayerNorm(d_model)
-        self.norm3 = nn.LayerNorm(d_model)
-
-        self.dropout = nn.Dropout(p_dropout)
-
-        self.attn1 = nn.MultiheadAttention(d_model, n_heads, batch_first=True)
-        self.cross_attn = nn.MultiheadAttention(d_model, n_heads, batch_first=True)
-
-        self.ff = nn.Sequential(
-            nn.Linear(d_model, dim_ff),
-            nn.GELU(),
-            nn.Dropout(p_dropout),
-            nn.Linear(dim_ff, d_model)
-        )
-    
-    def forward(self, encoder_output, pos_encodings):
-        # encoder_output is (batch_size, n_patches, d_model)
-        # pos_encodings is (batch_size, n_patches, d_model)
-
-        attn_output = self.attn1(pos_encodings, pos_encodings, pos_encodings)[0] # (batch_size, n_patches, d_model)
-        query = self.norm1(pos_encodings + self.dropout(attn_output)) # (batch_size, n_patches, d_model)
-        cross_attn_output = self.cross_attn(query, encoder_output, encoder_output)[0] # (batch_size, n_patches, d_model)
-        out = self.norm2(query + self.dropout(cross_attn_output)) # (batch_size, n_patches, d_model)
-        out = self.ff(out) # (batch_size, n_patches, d_model)
-        out = self.norm3(out + self.dropout(out)) # (batch_size, n_patches, d_model)
-        return out
-
-class NonAutoregressiveTransformerDecoder(nn.Module):
-    def __init__(self, d_model, n_patches, n_decoding_layers, p_dropout, dim_ff, n_heads, patch_height, patch_width):
-        super(NonAutoregressiveTransformerDecoder, self).__init__()
-        self.d_model = d_model
-        self.n_patches = n_patches
-        self.n_decoding_layers = n_decoding_layers
-        self.p_dropout = p_dropout
-        self.dim_ff = dim_ff
-        self.n_heads = n_heads
-        self.patch_height = patch_height
-        self.patch_width = patch_width
-        self.name = 'non autoregressive transformer decoder'
-
-        self.layers = nn.ModuleList([NonAutoregressiveTransformerDecoderLayer(d_model, p_dropout, n_heads, dim_ff) for _ in range(n_decoding_layers)])
-
-        self.lin1 = nn.Linear(d_model, patch_width)
-        self.lin2 = nn.Linear(1, patch_height)
-
-    def forward(self, encoder_output, x):
-        # encoder_output is (batch_size, n_patches, d_model)
-        # x = pos_encodings is (batch_size, n_patches, d_model)
-
-        for layer in self.layers:
-            #encoder_output is a fixed input for each decoder's layer
-            #x is actually the positional encodings only the first iteration. From the second iteration on, it is the output of the previous decoder's layer
-            x = layer(encoder_output, x)
-
-        # linear projections to get (batch_size, n_patches, patch_height, patch_width)
-        x = x.unsqueeze(2) # (batch_size, n_patches, 1, d_model)
-        x = self.lin1(x) # (batch_size, n_patches, 1, patch_width)
-        x = x.permute(0, 1, 3, 2) # (batch_size, n_patches, patch_width, 1)
-        x = self.lin2(x) # (batch_size, n_patches, patch_width, patch_height)
-        x = x.permute(0, 1, 3, 2) # (batch_size, n_patches, patch_height, patch_width)
-        return x
-
+   
 class FullModel(nn.Module):
-    def __init__(self, embedding_type, patch_height, patch_width, n_patches, d_model, learnable_pos_enc, p_dropout, n_heads,
+    def __init__(self, mask_token, to_take_perc, mask_or_same_perc, embedding_type, patch_height, patch_width, n_patches, d_model, learnable_pos_enc, p_dropout, n_heads,
                  dim_ff, n_encoding_layers, decoding_type, pos_enc_type, hiddem_dim, n_classes, dim_ff_decoding, n_decoding_heads, n_decoding_layers):
         super(FullModel, self).__init__()
+        self.mask_token = mask_token
+        self.to_take_perc = to_take_perc
+        self.mask_or_same_perc = mask_or_same_perc
         self.embedding_type = embedding_type
         self.patch_height = patch_height
         self.patch_width = patch_width
@@ -390,6 +257,11 @@ class FullModel(nn.Module):
         self.n_encoding_layers = n_encoding_layers
         self.decoding_type = decoding_type
         self.pos_enc_type = pos_enc_type
+        self.cls = nn.Parameter(torch.zeros((1, self.d_model)))
+        
+        self.patcher = Patcher((patch_height, patch_width))
+        
+        self.masker = Masker(mask_token, to_take_perc, mask_or_same_perc)
         
         # Embedder
         if embedding_type == 'linear':
@@ -398,36 +270,126 @@ class FullModel(nn.Module):
             self.embedder = ConvEmbedder(n_patches, patch_height, patch_width, d_model)
 
         #Positional Encoder
-        if pos_enc_type == '1d':
-            self.pe = PositionalEncoding1D(d_model, n_patches, p_dropout, learnable=learnable_pos_enc)
-        elif pos_enc_type == '2d':
-            self.pe = PositionalEncoding2D(d_model, n_patches, p_dropout, learnable=learnable_pos_enc)
+        if learnable_pos_enc:
+            if pos_enc_type == '1d':
+                self.pe = LearnablePositionalEncoding1D(d_model, n_patches)
+            elif pos_enc_type == '2d':
+                self.pe = LearnablePositionalEncoding2D(d_model, n_patches)
+        else:
+            if pos_enc_type == '1d':
+                self.pe = PositionalEncoding1D(d_model, n_patches, p_dropout)
+            elif pos_enc_type == '2d':
+                self.pe = PositionalEncoding2D(d_model, n_patches, p_dropout)
+            
         
         # Transformer encoder
         self.transformer_encoder = TransfomerEncoder(d_model, n_heads, dim_ff, p_dropout, n_encoding_layers)
 
         # Decoder
         if decoding_type == None: # This means supervised training. Not applicable to self-supervised MSM
-            self.decoder = MLPClassifier(d_model, n_classes, p_dropout, hiddem_dim)
-        elif decoding_type == 'fcn': # fully convolutional
-            self.decoder = FullyConvDecoder(n_patches, d_model, patch_height, patch_width)
+            self.decoder = MLPClassifier(d_model, n_classes, p_dropout, hiddem_dim)        
         elif decoding_type == 'rev':
-            self.decoder = ReversedEncoderAsDecoder(d_model, p_dropout, dim_ff_decoding, n_decoding_heads, patch_height, patch_width, n_patches, n_decoding_layers, embedding_type, pe = self.pe.pe)
-        elif decoding_type == 'nar':
-            self.decoder = NonAutoregressiveTransformerDecoder(d_model, n_patches, n_encoding_layers, p_dropout, dim_ff, n_heads, patch_height, patch_width)
+            self.decoder = EncoderAsDecoder(d_model, p_dropout, dim_ff, n_heads, patch_height, patch_width, n_patches, n_decoding_layers)
+            
+        self.initialize_weights()
+        
+    def initialize_weights(self):
+        if self.decoding_type is not None: #when pre-training mask and cls token need to be initialized
+            torch.nn.init.trunc_normal_(self.cls, std=0.02)
+            
+        for m in self.embedder.modules():
+            if isinstance(m, nn.Linear):
+                torch.nn.init.xavier_uniform_(m.weight)
+            elif isinstance(m, nn.Conv1d):
+                torch.nn.init.xavier_uniform_(m.weight)
+                
+        
+        if self.learnable_pos_enc:
+            if self.pos_enc_type == '1d':
+                torch.nn.init.trunc_normal_(self.pe.pe, std=0.02)
+            else:
+                torch.nn.init.trunc_normal_(self.pe.row_pe, std=0.02)
+                torch.nn.init.trunc_normal_(self.pe.col_pe, std=0.02)
+        
+        for m in self.transformer_encoder.modules():
+            if isinstance(m, nn.Linear):
+                torch.nn.init.xavier_uniform_(m.weight)
+                if isinstance(m, nn.Linear) and m.bias is not None:
+                    torch.nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.LayerNorm):
+                torch.nn.init.constant_(m.bias, 0)
+                torch.nn.init.constant_(m.weight, 1.0)
+                     
+        for m in self.decoder.modules():
+            if isinstance(m, nn.Linear):
+                torch.nn.init.xavier_uniform_(m.weight)
+                if isinstance(m, nn.Linear) and m.bias is not None:
+                    torch.nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.LayerNorm):
+                torch.nn.init.constant_(m.bias, 0)
+                torch.nn.init.constant_(m.weight, 1.0)
+                
+        logger.info("Model's weights initialized")
 
     @autocast()
     def forward(self, x, age, sex):
-        embedding = self.embedder(x)
+        patches, unfolded_shape = self.patcher(x)
+        if self.decoding_type is not None:
+            masked_patches, masked_indices = self.masker(patches.detach().clone())
+            embedding = self.embedder(masked_patches.flatten(2))
+        else:
+            embedding = self.embedder(patches.flatten(2))
+        
         pos_embedding = self.pe(embedding)
-        cls = torch.ones((pos_embedding.shape[0], 1, self.d_model)).cuda()
-        pos_embedding_plus_cls = torch.cat([cls, pos_embedding], dim=1)
-        transfomer_encoding = self.transformer_encoder(pos_embedding_plus_cls)
+        cls_token = self.cls.expand(pos_embedding.shape[0], -1, -1)
+        pos_embedding_plus_cls = torch.cat([cls_token, pos_embedding], dim=1)
+        transformer_encodings = self.transformer_encoder(pos_embedding_plus_cls)
         
         if self.decoding_type == None: #supervised training
-            out = self.decoder(transfomer_encoding[:, 0, :], age, sex) #pass vector of shape (batch_size, 1, d_model), (batch_size, 1), (batch_size, 1)
-        elif self.decoding_type == 'nar':
-            out = self.decoder(transfomer_encoding[:, 1:, :], pos_embedding) #pass vector of shape (batch_size, n_patches, d_model), (batch_size, n_patches, d_model)
+            out = self.decoder(transformer_encodings[:, 0, :], age, sex) #pass vector of shape (batch_size, 1, d_model), (batch_size, 1), (batch_size, 1)
+            return out.unflatten(2, (self.patch_height, self.patch_width))
         else: #decode/reconstruct all encodings except the cls token
-            out = self.decoder(transfomer_encoding[:, 1:, :]) #vector of shape (batch_size, n_patches, patch_height, patch_width)
-        return out
+            out = self.decoder(transformer_encodings[:, 1:, :]) #vector of shape (batch_size, n_patches, patch_height, patch_width)
+            return out.unflatten(2, (self.patch_height, self.patch_width)), patches, masked_indices, unfolded_shape
+
+#<-- MAE like FAIR -->
+    
+# class MAE(nn.Module):
+#     def __init__(self, num_patches, patch_height, patch_width, embedding_type, pos_enc_type, learnable_pos_enc, d_model, n_heads, dim_ff_ratio, n_encoding_layers, n_decoding_heads, n_decoding_layers):
+#         super(MAE, self).__init__()
+#         self.num_patches = num_patches
+#         self.patch_height = patch_height
+#         self.patch_width = patch_width
+#         self.embedding_type = embedding_type
+#         self.pos_enc_type = pos_enc_type
+#         self.d_model = d_model
+#         self.n_heads = n_heads
+#         self.dim_ff_ratio = dim_ff_ratio
+#         self.n_encoding_layers = n_encoding_layers
+#         self.n_decoding_layers = n_decoding_layers
+#         self.n_decoding_heads = n_decoding_heads
+#         self.use_pe_in_decoding = use_pe_in_decoding
+        
+#         # Embedder
+#         if embedding_type == 'linear':
+#             self.embedder = SimpleLinearEmbedder(n_patches, patch_height, patch_width, d_model)
+#         elif embedding_type == 'conv':
+#             self.embedder = ConvEmbedder(n_patches, patch_height, patch_width, d_model)
+            
+#         #Positional Encoder
+#         if learnable_pos_enc:
+#             if pos_enc_type == '1d':
+#                 self.pe = LearnablePositionalEncoding1D(d_model, n_patches)
+#             elif pos_enc_type == '2d':
+#                 self.pe = LearnablePositionalEncoding2D(d_model, n_patche)
+#         else:
+#             if pos_enc_type == '1d':
+#                 self.pe = PositionalEncoding1D(d_model, n_patches, p_dropout)
+#             elif pos_enc_type == '2d':
+#                 self.pe = PositionalEncoding2D(d_model, n_patches, p_dropout)
+        
+#         #Encoder
+#         self.encoder = TransfomerEncoder(d_model, n_heads, d_model * dim_ff_ratio, p_dropout, n_encoding_layers)
+            
+        
+        

@@ -19,7 +19,7 @@ class ECGDatasetSelfSupervised(Dataset):
         #take only 10% of the dataset for fast training
         #return to the original length after the exploration phase
         if reduced:            
-            self.ecg_dataframe = self.ecg_dataframe.iloc[:int(0.1*self.ecg_dataframe.__len__())]                                            
+            self.ecg_dataframe = self.ecg_dataframe.iloc[:int(0.25*self.ecg_dataframe.__len__())]                                            
                                              
         self.ecg_dir_path = ecg_dir_path # something like "./***_self_supevised", *** in {train, val, test}
 
