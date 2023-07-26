@@ -1,19 +1,27 @@
+# This script is intended to be run from command line and trains a K-means model to cluster instances according to their features
+# The model is then saved
 import joblib
 from sklearn.cluster import MiniBatchKMeans
+from sklearn import processing
+from sklearn.metrics import silhouette_score as sil
 import os
 from loguru import logger
-import argparse 
+import argparse
 
 def cluster(args):
     logger.info("Fetching ECGs' features...")
     features_path = args.features_path
     files = os.listdir(features_path)
     features = []
+    # fourier features are saved as np.array (n_features, )
+    # encoder's representations are saved as np.array(cnn_out_shape * d_model = n_features, )
     for file in files:
-        feat = np.expand_dims(np.load(os.path.join(features_path, file)), 1) #np array (n_features, 1)
+        feat = np.expand_dims(np.load(os.path.join(features_path, file)), 0) #np array (1, n_features)
         features.append(feat)
     features = np.concatenate(features, axis=0) #np.array (n_instances, n_features)
     logger.info("Features fetched.")
+
+    features = processing.normalize(features)
 
     #model creation and fit
     logger.info("Training a clustering model...")
@@ -28,12 +36,19 @@ def cluster(args):
         ).fit(features)
     logger.info("Training done.")
 
+    sil = (features, model.labels_, metric='euclidean', random_state=42) #1 best, -1 worst
+    sse = model.inertia_
+
+    logger.info(f"Silhouette score: {sil} - SSE: {sse}")
+
     if args.train_iteration == 1:
         model_name = "k_means_" + "morphology"
     elif args.train_iteration == 2:
         model_name = "k_means_" + "encoder_6th_layer"
     else:
         model_name = "k_means_" + "encoder_9th_layer"
+
+    model_name += "_" + str(sil) + "_" + str(sse)    
 
     joblib.dump(model, os.path.join("/data/ECG_AF/ECG_pretraining/HuBERT", model_name))
     logger.info(f"{model_name} model saved.")    

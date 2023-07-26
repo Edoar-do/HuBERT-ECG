@@ -52,7 +52,7 @@ class ECGDatasetSelfSupervised(Dataset):
 
         if self.pretrain:
             #### PRE-TRAINING #### 
-            # kmeans-model.predict(saved_features) --> labels           
+            # kmeans-model.predict(saved_features) --> labels (in form of indices)           
             if self.train_iteration == 1:
                 features = np.load(os.path.join(ECG_HUBERT_FEATURES_PATH, ecg_filename)) #(n_features, )
             if self.train_iteration == 2:
@@ -61,9 +61,9 @@ class ECGDatasetSelfSupervised(Dataset):
                 features = np.load(os.path.join(ENCODER_9_FEATURES_PATH, ecg_filename)) #(n_features, )
             
             features = np.expand_dims(features, 0) #(1, n_features)
-            labels = self.kMeans_model.predict(features) #(1, )
+            labels = self.kMeans_model.predict(features) #(1, ) 
 
-            return ecg_data, labels
+            return torch.from_numpy(ecg_data).unsqueeze(0), torch.from_numpy(labels).long()
 
         else:
             #### FINE-TUNING ####

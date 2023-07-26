@@ -24,7 +24,7 @@ class Hubert(nn.Module):
         super(Hubert, self).__init__()
 
         ### hyper-params ###
-        self.num_label_embeddings = num_label_embeddings
+        self.num_label_embeddings = num_label_embeddings #should be the number of clusters created by kmeans model
         self.to_mask = to_mask #only in pre-training, not fine-tuning
         self.d_model = d_model
         self.nhead = nhead
@@ -63,14 +63,21 @@ class Hubert(nn.Module):
         return x, mask
 
     def encode(self, x, output_layer:int = None):
+        print("X shape: ", x.shape)
         x = self.feature_extractor(x)
+        print("feature extracted shape: ", x.shape)
         x = self.feature_projection(x.transpose(1, 2))
+        print("feature projected shape: ", x.shape)
         x, mask = self.mask(x)
+        print("features masked shape: ", x.shape)
+        print("Mask shape: ", mask.shape)
         x = x + self.positional_embedding(x)
+        print("features + pos shape: ", x.shape)
         x = self.dropout(self.norm(x))
         #output_layer useful when calling "predict" to compute representations for 2nd and 3rd train iterations
         #1st train iteration is None
         x = self.encoder(x, output_layer = output_layer) 
+        print("transformer encodings shape: ", x.shape)
         return x, mask
 
     def logits(self, x):
@@ -81,10 +88,19 @@ class Hubert(nn.Module):
         )
         return logits / 0.1
 
+    def features(self, x, output_layer):
+        ''' Return encoder's `output_layer`th features for a single ecg instance'''
+        assert x.size(0) == 1 #one instance at a time
+        features, _ = self.encode(x, output_layer)        
+        return features.squeeze().cpu().numpy() #(cnn_out_shape, d_model)
+
+
     def forward(self, x):
         x, mask = self.encode(x)
         x = self.proj(x)
+        print("final projection shape: ", x.shape)
         logits = self.logits(x)
+        print("Logits shape: ", logits.shape)
         return logits, mask
 
 class FeatureExtractor(nn.Module):
@@ -171,3 +187,10 @@ def _compute_mask(shape:tuple, mask_prob:float, mask_length:int, device:torch.de
     mask_idxs = mask_indices + offsets
 
     return mask.scatter(1, mask_idxs, True)
+
+if __name__ == "__main__":
+    print("Testing Hubert...")
+    hubert = Hubert()
+    x = torch.randn(1, 1, 2500*12)
+    logits, mask = hubert(x)
+

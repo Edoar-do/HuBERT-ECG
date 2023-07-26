@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import numpy as np
 
-def compute_real_fourier_coeffs_from_discrete_set(discrete_function, N):
+def compute_real_fourier_coeffs_from_discrete_set(discrete_function, N = 40):
     '''
     Computes N * 2 Fourier coefficients of a discrete function
     
@@ -20,7 +20,7 @@ def compute_real_fourier_coeffs_from_discrete_set(discrete_function, N):
         result.append((an, bn))
     return np.array(result)
 
-def dump_ecg_feature(record, in_dir):
+def dump_ecg_features(record, in_dir, N):
     '''
     Save on disk the Fourier coefficients of the ECG signal concatenated in a single vector
 
@@ -32,10 +32,27 @@ def dump_ecg_feature(record, in_dir):
     path = os.path.join("/data/ECG_AF/hubert_features", filename)
     if not os.path.isfile(path): #if features do not exist then calculate them, skip otherwise
         data = np.load(os.path.join(in_dir, filename))
-        data = np.concatenate(data[:, :2500]) #consider only 2500 samples out of 5000
-        coefficients = compute_real_fourier_coeffs_from_discrete_set(data, N = 40)
+        data = np.concatenate(data[:, :2500]) #consider only 2500 samples out of 5000, (2500*12, )
+        coefficients = compute_real_fourier_coeffs_from_discrete_set(data, N = N)
         coefficients = coefficients[:, 0].tolist() + coefficients[:, 1].tolist() #--> total = N * 2
-        np.save(os.path.join("/data/ECG_AF/hubert_features", filename[:-4]), coefficients)
+        np.save(os.path.join("/data/ECG_AF/hubert_features", filename[:-4]), coefficients) #saved shape (N*2,)
+
+def dump_ecg_features_from_hubert(record, in_dir, hubert, output_layer, dest_dir):
+    '''
+    Save on disk at `dest_dir` the features/representations coming out from Hubert encoder's `output_layer`.
+    `in_dir` is where to load the raw ecg from, using the ecg filename in the corresponding `record`, while `hubert_path` is where to load the model from
+    '''
+
+    filename = record.filename
+    path = os.path.join(dest_dir, filename)
+    if not os.path.isfile(path):
+        data =  np.load(os.path.join(in_dir, filename))
+        data = np.concatenate(data[., :2500]) #(12*2500, )
+        data = np.expand_dimes(data, 0) #(1, 12*2500)
+        data = torch.from_numpy(data).unsqueeze(0) #(1, 1, 2500*12)
+        # hubert = torch.jit.load(hubert_path) --> pass the model, otherwise it has to be loaded every time
+        features = hubert.features(data, output_layer) #np.array (cnn_out_shape, d_model)
+        np.save(os.path.join(dest_dir, filename[:-4]), np.concatenate(features)) #saved shape (cnn_out_shape * d_model, )
 
 
 if __name__ == "__main__":
@@ -51,6 +68,6 @@ if __name__ == "__main__":
 
     print("Start dumping ecg features from part of it...")
 
-    dataframe.apply(dump_ecg_feature, axis=1, args=("/data/ECG_AF/train_self_supervised",))
+    dataframe.apply(dump_ecg_features, axis=1, args=("/data/ECG_AF/train_self_supervised", 40))
 
     print("Features dumped. ")
