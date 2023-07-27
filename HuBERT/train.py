@@ -38,11 +38,13 @@ def train(rank, world_size, args):
     betas = (wandb.config['beta1'], wandb.config['beta2']) # (0.9, 0.98)
     batch_size = wandb.config['batch_size'] # 512 --> remember to sert bs so to saturate gpu memory
     weight_decay = wandb.config['weight_deacay'] # 0.01
+    alpha = wandb.config['alpha'] # [1, 0.5, 0] to start
     #the following can be reduced for exploratory training phases
     first_iter_steps = wandb.config['first_iter_steps'] # 250000
     second_iter_steps = wandb.config['second_iter_steps'] #400000
     third_iter_steps = wandb.config['third_iter_steps'] # 100000
     val_interval = wandb.config['val_interval'] # 1000
+    #todo: add model hyper-params as configs (NOTE that num_layers > 9 in order to take intermediate representations)
 
     #assertions necessary to validate untill the end of each training phase
     assert first_iter_steps % val_interval == 0
@@ -64,7 +66,7 @@ def train(rank, world_size, args):
         tmp = torch.load(args.load_path[:-3] + ".pth")
         global_step, best_val_loss = tmp['global_step'], tmp['best_val_loss']
     else:
-        hubert = Hubert() #default args
+        hubert = Hubert(num_label_embeddings = args.n_labels) #default args
         global_step = 0
         best_val_loss = float("inf")
 
@@ -145,8 +147,7 @@ def train(rank, world_size, args):
             optimizer.zero_grad()
 
             batch_ecg, batch_labels = tuple(zip(*batch)) #2 tuples of tensors
-            # batch_ecg = torch.stack(batch_ecg).to(rank)
-            # batch_labels = torch.stack(batch_labels).to(rank)
+
             batch_ecg = torch.stack(batch_ecg).to(rank, dtype=dtype)
             batch_labels = torch.stack(batch_labels).to(rank, dtype=dtype)
 
@@ -160,7 +161,7 @@ def train(rank, world_size, args):
 
                 masked_loss = F.cross_entropy(batch_logits[batch_mask], batch_labels[batch_mask])
                 unmasked_loss = F.cross_entropy(batch_logits[~batch_mask], batch_labels[~batch_mask])
-                loss = args.alpha * masked_loss +  (1 - args.alpha) * unmasked_loss
+                loss = alpha * masked_loss +  (1 - alpha) * unmasked_loss
 
 
             scaler.scale(loss).backward()
@@ -192,12 +193,14 @@ def train(rank, world_size, args):
                     with torch.no_grad():
                         batch_logits, batch_mask = hubert(batch_ecg)
 
-                        length = min(batch_mask.size[-1], batch_labels.size[-1])
+                        length = min(batch_mask.size()[-1], batch_labels.size()[-1])
                         batch_logits = batch_logits[:, :length, :]
                         batch_labels = batch_labels[:, :length]
                         batch_mask = batch_mask[:, :length]
 
-                        loss = F.cross_entropy(batch_logits[mask], batch_labels[mask])
+                        masked_loss = F.cross_entropy(batch_logits[batch_mask], batch_labels[batch_mask])
+                        unmasked_loss = F.cross_entropy(batch_logits[~batch_mask], batch_labels[~batch_mask])
+                        loss = alpha * masked_loss +  (1 - alpha) * unmasked_loss
                     
                     val_loss.append(loss.item())
 
@@ -233,11 +236,10 @@ if __name__ == "__main__":
         type=int,
     )
 
-    # in [0, 1]
     parser.add_argument(
-        "alpha",
-        help="The alpha value for the weighted loss function. \n alpha=1 suggested when train_iteration=1",
-        type=float
+        "n_labels",
+        help="Number of possible values for the label (= n_clusters)",
+        type=int
     )
 
     parser.add_argument(
@@ -263,8 +265,6 @@ if __name__ == "__main__":
     if not torch.cuda.is_available():
         logger.error("CUDA not available. CPU training not supported")
         exit(1)
-    if args.alpha > 1.0 or args.alpha < 0.0:
-        logger.error("alpha parameter should be in [0,1] interval")
 
     mp.spawn(
         train,

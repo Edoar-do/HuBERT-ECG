@@ -7,7 +7,7 @@ import copy
 class Hubert(nn.Module):
     def __init__(
         self,
-        num_label_embeddings: int = 100,
+        num_label_embeddings: int,
         to_mask: bool = True,
         kernels_dims:tuple = (10, 3, 3, 3, 3, 2, 2),
         strides:tuple = (5, 2, 2, 2, 2, 2, 2),
@@ -24,7 +24,7 @@ class Hubert(nn.Module):
         super(Hubert, self).__init__()
 
         ### hyper-params ###
-        self.num_label_embeddings = num_label_embeddings #should be the number of clusters created by kmeans model
+        self.num_label_embeddings = num_label_embeddings #number of classes == n_clusters from Kmeans
         self.to_mask = to_mask #only in pre-training, not fine-tuning
         self.d_model = d_model
         self.nhead = nhead
@@ -48,7 +48,7 @@ class Hubert(nn.Module):
             ),
             num_layers = num_layers
         )
-        self.proj = nn.Linear(d_model, 256)
+        self.proj = nn.Linear(d_model, 256) # 256 = n_bits to embed a label
 
         ### tokens and embeddings ###
         self.mask_token = nn.Parameter(torch.FloatTensor(d_model).uniform_())
@@ -58,7 +58,7 @@ class Hubert(nn.Module):
         '''Mask features `x` before the encoder'''
         mask = None
         if self.to_mask: #we mask only in pre-training, not fine-tuning
-            mask = _compute_mask((x.size(0), x.size(1)), mask_prob=0.8, mask_length=10, device=x.device, min_masks=2)
+            mask = _compute_mask((x.size(0), x.size(1)), mask_prob=0.65, mask_length=10, device=x.device, min_masks=2)
             x[mask] = self.mask_token.to(x.dtype)
         return x, mask
 
@@ -101,6 +101,7 @@ class Hubert(nn.Module):
         print("final projection shape: ", x.shape)
         logits = self.logits(x)
         print("Logits shape: ", logits.shape)
+        print("Label embeddings shape: ", self.label_embedding.weight.shape)
         return logits, mask
 
 class FeatureExtractor(nn.Module):
@@ -190,7 +191,24 @@ def _compute_mask(shape:tuple, mask_prob:float, mask_length:int, device:torch.de
 
 if __name__ == "__main__":
     print("Testing Hubert...")
-    hubert = Hubert()
-    x = torch.randn(1, 1, 2500*12)
+    hubert = Hubert(100)
+    x = torch.randn(2, 1, 2500*12)
     logits, mask = hubert(x)
+    labels = torch.randint(0, 100, (2,))
+
+    labels_embedded = hubert.label_embedding(labels)
+
+
+    length = min(mask.size()[-1], labels.size()[-1])
+    logits = logits[:, :length, :]
+    labels = labels[:, :length]
+    mask = mask[:, :length]
+
+    print(logits.shape)
+    print(labels.shape)
+    print(mask.shape)
+
+    masked_loss = F.cross_entropy(logits[mask], labels[mask])
+    unmasked_loss = F.cross_entropy(logits[~mask], labels[~mask])
+    loss = alpha * masked_loss +  (1 - alpha) * unmasked_loss
 

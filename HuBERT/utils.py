@@ -62,12 +62,23 @@ if __name__ == "__main__":
     print("Start reading the dataset...")
 
     dataframe = pd.read_csv("/data/ECG_AF/train_self_supervised_processed.csv")
-    dataframe = dataframe.iloc[:int(0.25*dataframe.__len__())]
+    # dataframe = dataframe.sample(frac=1) #shuffle only when train_iteration changes, NOT within the same train_iteration
+    dataframe = dataframe.iloc[:int(0.1*dataframe.__len__())]
 
     print("Dataset read into a dataframe.")
 
     print("Start dumping ecg features from part of it...")
 
+    # train_iteration = 1
     dataframe.apply(dump_ecg_features, axis=1, args=("/data/ECG_AF/train_self_supervised", 40))
+    
+    #train_iteration = 2
+    dataframe.apply(dump_ecg_features_from_hubert, axis=1, args=("/data/ECG_AF/train_self_supervised", hubert, 6, "/data/ECG_AF/ECG_pretraining/HuBERT/encoder_6_features", ))
+
+    #train_iteration = 3
+    dataframe.apply(dump_ecg_features_from_hubert, axis=1, args=("/data/ECG_AF/train_self_supervised", hubert, 9, "/data/ECG_AF/ECG_pretraining/HuBERT/encoder_9_features", ))
+
+
+    
 
     print("Features dumped. ")
