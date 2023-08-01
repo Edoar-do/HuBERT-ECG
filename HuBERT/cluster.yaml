@@ -1,0 +1,8 @@
+program: cluster.py
+method: grid
+metric:
+	name: sse
+	goal: minimize
+parameters:
+	n_clusters:
+		values: [50, 100, 150]

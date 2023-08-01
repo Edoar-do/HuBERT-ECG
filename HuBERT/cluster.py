@@ -9,24 +9,30 @@ from loguru import logger
 import argparse
 
 def cluster(args):
-    logger.info("Fetching ECGs' features...")
-    features_path = args.features_path
-    files = os.listdir(features_path)
+
+    wandb.init(entity="cardi-ai", project="ECG-pretraining", config=wandb.config, group="self-supervised")
+
+    #fixing seed
+    np.random.seed(42)
+
+    logger.info("Fetching features from ECGs...")
+
+    files = os.listdir(args.features_path) #there are #instances_selected_to_train_kmeans * #shards_per_instance files, each containing some n_features
+
+    #NOTE: n_features = 19 for train_iteration = 1 ; n_features = d_model for subsequent train_iterations
+
     features = []
-    # fourier features are saved as np.array (n_features, )
-    # encoder's representations are saved as np.array(cnn_out_shape * d_model = n_features, )
     for file in files:
-        feat = np.expand_dims(np.load(os.path.join(features_path, file)), 0) #np array (1, n_features)
+        feat_path = os.path.join(args.features_path, file)
+        feat = np.load(feat_path) #(93, 19) if train_iteration = 1 ; (93, d_model) if train_iteration > 1
         features.append(feat)
-    features = np.concatenate(features, axis=0) #np.array (n_instances, n_features)
+    features = np.concatenate(features, axis=0) #(len(files) * 93, n_features)
+
     logger.info("Features fetched.")
 
-    features = preprocessing.normalize(features)
-
-    #model creation and fit
-    logger.info("Training a clustering model...")
+    logger.info("Train kMeans...")
     model = MiniBatchKMeans(
-        n_clusters = args.n_clusters,
+        n_clusters = wandb.config['n_clusters'],
         random_state = 42,
         compute_labels = False,
         batch_size = 10000,
@@ -39,7 +45,9 @@ def cluster(args):
     sil_score = sil(features, model.labels_, metric='euclidean', random_state=42) #1 best, -1 worst
     sse = model.inertia_
 
-    logger.info(f"Silhouette score: {sil_score} - SSE: {sse}")
+    logger.info(f"Sil_score: {sil_score} - sse: {sse}")
+
+    wandb.log({"sil_score" : sil_score, "sse" : sse})
 
     if args.train_iteration == 1:
         model_name = "k_means_" + "morphology"
@@ -51,7 +59,7 @@ def cluster(args):
     model_name += "_" + str(sil_score) + "_" + str(sse)    
 
     joblib.dump(model, os.path.join("/data/ECG_AF/ECG_pretraining/HuBERT/kmeans", model_name))
-    logger.info(f"{model_name} model saved.")    
+    logger.info(f"{model_name} model saved.")   
 
 
 if __name__ == "__main__":
@@ -68,11 +76,11 @@ if __name__ == "__main__":
         type=str
     )
 
-    parser.add_argument(
-        "n_clusters",
-        help="number of clusters",
-        type=int,
-    )
+    # parser.add_argument(
+    #     "n_clusters",
+    #     help="number of clusters",
+    #     type=int,
+    # )
 
     #1, 2 or 3
     parser.add_argument(
@@ -82,4 +90,3 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     cluster(args)
-

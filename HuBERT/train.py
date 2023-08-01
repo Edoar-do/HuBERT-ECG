@@ -10,9 +10,11 @@ import torch.distributed as dist
 from torch.utils.data.distributed import DistributedSampler
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
-from hubert_ecg import Hubert
+from hubert_ecg import HuBERT
+from transformers import HubertConfig
 import torch.optim as optim
-from utils import load_checkpoint
+import wandb
+import numpy as np
 
 BACKEND = 'nccl'
 INIT_METHOD = "tcp://localhost:????"
@@ -33,18 +35,32 @@ def train(rank, world_size, args):
         init_method=INIT_METHOD
     )
 
-    #configs
+    #fixing seeds
+    torch.manual_seed(42)
+    torch.cuda.manual_seed(42)
+
+    ### configs ###
     lr = wandb.config['lr'] # 1e-5
     betas = (wandb.config['beta1'], wandb.config['beta2']) # (0.9, 0.98)
     batch_size = wandb.config['batch_size'] # 512 --> remember to sert bs so to saturate gpu memory
     weight_decay = wandb.config['weight_deacay'] # 0.01
     alpha = wandb.config['alpha'] # [1, 0.5, 0] to start
+
     #the following can be reduced for exploratory training phases
     first_iter_steps = wandb.config['first_iter_steps'] # 250000
     second_iter_steps = wandb.config['second_iter_steps'] #400000
     third_iter_steps = wandb.config['third_iter_steps'] # 100000
     val_interval = wandb.config['val_interval'] # 1000
-    #todo: add model hyper-params as configs (NOTE that num_layers > 9 in order to take intermediate representations)
+    
+    #model hyperparams
+    hidden_size = wandb.config['hidden_size'] # 768
+    num_hidden_layers = wandb.config['num_hidden_layers'] # 12
+    num_attention_heads = wandb.config['num_attention_heads'] # 12
+    intermediate_size = wandb.config['intermediate_size'] # 3072
+    mask_time_prob = wandb.config['mask_time_prob'] # 0.5
+    classifier_proj_size = wandb.config['classifier_proj_size'] # 256
+
+    ################
 
     #assertions necessary to validate untill the end of each training phase
     assert first_iter_steps % val_interval == 0
@@ -65,8 +81,18 @@ def train(rank, world_size, args):
         hubert = torch.jit.load(args.load_path)
         tmp = torch.load(args.load_path[:-3] + ".pth")
         global_step, best_val_loss = tmp['global_step'], tmp['best_val_loss']
-    else:
-        hubert = Hubert(num_label_embeddings = args.n_labels) #default args
+    else:        
+        config = HubertConfig(
+            vocab_size = args.vocab_size,
+            hidden_size = hidden_size,
+            num_hidden_layers = num_hidden_layers,
+            num_attention_heads = num_attention_heads,
+            intermediate_size = intermediate_size,
+            mask_time_prob = mask_time_prob, 
+            classifier_proj_size = classifier_proj_size,
+        ) # + other default params
+
+        hubert = HuBERT(config) #default args
         global_step = 0
         best_val_loss = float("inf")
 
@@ -146,18 +172,24 @@ def train(rank, world_size, args):
 
             optimizer.zero_grad()
 
-            batch_ecg, batch_labels = tuple(zip(*batch)) #2 tuples of tensors
+            batch_ecg, batch_attention_mask, batch_labels = tuple(zip(*batch)) #3 tuples of tensors
 
-            batch_ecg = torch.stack(batch_ecg).to(rank, dtype=dtype)
-            batch_labels = torch.stack(batch_labels).to(rank, dtype=dtype)
+            batch_ecg = torch.stack(batch_ecg).to(rank) #(BS, 12*2500)
+            batch_attention_mask = torch.stack(batch_attention_mask).to(rank) #(BS, 12*2500)
+            batch_labels = torch.stack(batch_labels).to(rank) #(BS, F)
 
             with amp.autocast():
-                batch_logits, batch_mask = hubert(batch_ecg)
+                out_encoder_dict = hubert(batch_ecg, attention_mask = batch_attention_mask, output_attentions=True, output_hidden_states=True, return_dict=True)
 
+                batch_logits = hubert.logits(out_encoder_dict['last_hidden_state']) #(BS, F, V)
+                batch_mask = out_encoder_dict['mask_time_indices'] #(BS, F)
+
+                ### this part should be redundant ###
                 length = min(batch_mask.size[-1], batch_labels.size[-1])
                 batch_logits = batch_logits[:, :length, :]
                 batch_labels = batch_labels[:, :length]
                 batch_mask = batch_mask[:, :length]
+                #####################################
 
                 masked_loss = F.cross_entropy(batch_logits[batch_mask], batch_labels[batch_mask])
                 unmasked_loss = F.cross_entropy(batch_logits[~batch_mask], batch_labels[~batch_mask])
@@ -186,17 +218,23 @@ def train(rank, world_size, args):
                 # val_accuracy = []
 
                 for batch in tqdm(val_dl, total=len(val_dl)):
-                    batch_ecg, batch_labels = tuple(zip(*batch))
-                    batch_ecg = torch.stack(batch_ecg).to(rank, dtype=dtype)
-                    batch_labels = torch.stack(batch_labels).to(rank, dtype=dtype)
+                    batch_ecg, batch_attention_mask, batch_labels = tuple(zip(*batch))
+                    batch_ecg = torch.stack(batch_ecg).to(rank)
+                    batch_attention_mask = torch.stack(batch_attention_mask).to(rank)
+                    batch_labels = torch.stack(batch_labels).to(rank)
 
                     with torch.no_grad():
-                        batch_logits, batch_mask = hubert(batch_ecg)
+                        out_encoder_dict = hubert(batch_ecg, attention_mask = batch_attention_mask, output_attentions=True, output_hidden_states=True, return_dict=True)
 
+                        batch_logits = hubert.logits(out_encoder_dict['last_hidden_state'])
+                        batch_mask = out_encoder_dict['mask_time_indices']
+
+                        ### this part should be redundant ###
                         length = min(batch_mask.size()[-1], batch_labels.size()[-1])
                         batch_logits = batch_logits[:, :length, :]
                         batch_labels = batch_labels[:, :length]
                         batch_mask = batch_mask[:, :length]
+                        #####################################
 
                         masked_loss = F.cross_entropy(batch_logits[batch_mask], batch_labels[batch_mask])
                         unmasked_loss = F.cross_entropy(batch_logits[~batch_mask], batch_labels[~batch_mask])
@@ -238,7 +276,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "n_labels",
-        help="Number of possible values for the label (= n_clusters)",
+        help="Number of possible values for the label (= n_clusters or vocab_size)",
         type=int
     )
 
@@ -264,6 +302,14 @@ if __name__ == "__main__":
     
     if not torch.cuda.is_available():
         logger.error("CUDA not available. CPU training not supported")
+        exit(1)
+
+    if agrs.train_iteration > 3 or args.train_iteration < 1:
+        logger.error("train_iteration must be 1, 2 or 3")
+        exit(1)
+
+    if resume and args.load_path is None:
+        logger.error("load_path must be specified if resume is True")
         exit(1)
 
     mp.spawn(
