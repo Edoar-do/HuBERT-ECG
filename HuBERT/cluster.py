@@ -8,6 +8,15 @@ import os
 from loguru import logger
 import argparse
 
+def yield_features(features_path):
+    for entry in os.scandir(features_path):
+        if entry.is_file():
+            yield np.load(entry.path) #(93, 19) if train_iteration = 1 ; (93, d_model) if train_iteration > 1
+
+def get_features(generator):
+    features = np.concatenate([f for f in generator], axis=0)
+    return features
+
 def cluster(args):
 
     wandb.init(entity="cardi-ai", project="ECG-pretraining", config=wandb.config, group="self-supervised")
@@ -17,16 +26,9 @@ def cluster(args):
 
     logger.info("Fetching features from ECGs...")
 
-    files = os.listdir(args.features_path) #there are #instances_selected_to_train_kmeans * #shards_per_instance files, each containing some n_features
+    generator = yield_features(args.features_path)
 
-    #NOTE: n_features = 19 for train_iteration = 1 ; n_features = d_model for subsequent train_iterations
-
-    features = []
-    for file in files:
-        feat_path = os.path.join(args.features_path, file)
-        feat = np.load(feat_path) #(93, 19) if train_iteration = 1 ; (93, d_model) if train_iteration > 1
-        features.append(feat)
-    features = np.concatenate(features, axis=0) #(len(files) * 93, n_features)
+    features = get_features(generator)
 
     logger.info("Features fetched.")
 

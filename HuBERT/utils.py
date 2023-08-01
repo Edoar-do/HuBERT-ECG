@@ -5,6 +5,8 @@ import scipy.stats as stats
 from scipy.fft import fft
 from loguru import logger
 import random
+import argparse
+import torch
 
 SHARD_SIZE = 322
 
@@ -78,8 +80,10 @@ def dump_ecg_features(record, in_dir, dest_dir):
             shard = data[i:i+SHARD_SIZE]
             features.append(get_signal_features(shard)) #(19,)
 
-        features = np.array(features) #(93, 19)
+        features = np.array(features, dtype=np.float32) #(93, 19)
         np.save(os.path.join(dest_dir, filename[:-4]), features) #saved shape (93, 19)
+    # else:
+    #     logger.info(f"Skipping {filename} because features already exist")
 
 def dump_ecg_features_from_hubert(record, in_dir, hubert, output_layer, dest_dir):
     '''
@@ -97,6 +101,7 @@ def dump_ecg_features_from_hubert(record, in_dir, hubert, output_layer, dest_dir
         attention_mask = compute_attention_mask(data) #(12*2500, )
         features = hubert(data, torch.from_numpy(attention_mask).long().unsqueeze(0), None, False, True, True)['hidden_states'][output_layer] #(1, 93, d_model)
         features = features.squeeze(0).cpu().numpy() #(93, d_model)
+        features = features.astype(np.float32) # to reduce the memory occupation when it will be loaded for clustering
         np.save(os.path.join(dest_dir, filename[:-4]), features) #saved shape (93, d_model)
 
 def main(args):
@@ -115,8 +120,7 @@ def main(args):
     logger.info("Loading dataframe...")
 
     dataframe = pd.read_csv("/data/ECG_AF/train_self_supervised_processed.csv")
-    dataframe = dataframe.sample(frac=1)
-    dataframe = dataframe.iloc[:int(args.perc*dataframe.__len__())]
+    dataframe = dataframe.iloc[:int(args.perc*dataframe.__len__())+1]
 
     if args.train_iteration == 1:
         logger.info("Dumping morphological features...")
@@ -164,12 +168,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     #check if train_iteration is valid
-    if args.train_iteration < 1 or train_iteration > 3:
-        raise ValueError("train_iteration must be 1, 2 or 3.")
+    if args.train_iteration < 1 or args.train_iteration > 3:
+        raise ValueError(f"train_iteration must be 1, 2 or 3. Inserted {args.train_iteration}.")
 
     #check if perc is valid
     if args.perc < 0. or args.perc > 1.:
-        raise ValueError("perc must be between 0 and 1.")
+        raise ValueError(f"perc must be between 0 and 1. Inserted {args.perc}.")
 
     #check if hubert_path is valid
     if args.train_iteration > 1 and args.hubert_path is None:
@@ -177,6 +181,9 @@ if __name__ == "__main__":
     
     if args.train_iteration > 1 and not os.path.isfile(args.hubert_path):
         raise ValueError("hubert_path must be a valid path to a Hubert model.")
-    
+
+    if args.train_iteration == 1 and args.hubert_path is not None:
+        logger.warning("hubert_path is not needed if train_iteration is 1. Ignoring it...")
+
 
     main(args)

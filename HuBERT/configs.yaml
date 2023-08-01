@@ -1,0 +1,46 @@
+program: train.py
+method: bayes
+metric:
+	name: val_loss_1 # TODO: change the final number depending on the train_iteration
+	goal: minimize
+parameters:
+	lr:
+		distribution: uniform
+		max: 0.0001
+		min: 0.00001
+	beta1:
+		distribution: uniform
+		max: 0.95
+		min: 0.9
+	beta2:
+		distribution: uniform
+		max: 0.99
+		min: 0.95
+	batch_size:
+		value: 512
+	weight_decay:
+		value: 0.01
+	alpha:
+		values: [0.0, 0.5, 1.0]
+	first_iter_steps:
+		value: 25000 #250000 in the paper
+	second_iter_steps:
+		value: 40000 #400000 in the paper
+	third_iter_steps:
+		value: 10000 #100000 in the paper, from LARGE on
+	val_interval:
+		value: 100
+	# hubert base configuration
+	hidden_size:
+		value: 768
+	num_hidden_layers:
+		value: 12
+	num_attention_heads:
+		value: 12
+	intermediate_size:
+		value: 3072
+	mask_time_prob: #once found a good model, would be interesting seeing how mask_time_prob impact of loss
+		value: 0.5
+	classifier_proj_size:
+		value: 256
+		

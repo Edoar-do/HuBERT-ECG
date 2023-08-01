@@ -68,7 +68,6 @@ def train(rank, world_size, args):
     assert third_iter_steps % val_interval == 0
     
     #device = torch.device("cuda")
-    dtype = torch.float
 
     if distributed:
         dist.init_process_group(
