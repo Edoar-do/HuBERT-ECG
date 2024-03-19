@@ -27,10 +27,6 @@ def cluster(args):
         pretrain = False,
         encode = True
     )
-    
-    # just for testing clustering before 2nd iteration
-    # todo: to remove once done with this project
-    data_set.ecg_dataframe = data_set.ecg_dataframe.iloc[int(0.0 * len(data_set)) : int(0.1 * len(data_set))+1]
   
     dataloader = DataLoader(
         data_set,
@@ -64,26 +60,7 @@ def cluster(args):
         
         for _, filenames in tqdm(dataloader, total = len(dataloader)):
 
-            features = [np.load(os.path.join(args.in_dir, filename)) for filename in filenames] # todo: replace below with this faster approach
-
-            # build the batch from filenames returned by the dataloader
-            
-            # features = []
-            # for filename in filenames:
-            #     feat = np.load(os.path.join(args.in_dir, filename))
-            #     '''
-            #     if feat.shape[1] == 30:
-            #         # take first 16 elems, skip one, take last 13 elems --> mixed
-            #         feat = np.concatenate((feat[:, :16], feat[:, 17:]), axis = 1)
-            #     assert feat.shape[0] == 93 and feat.shape[1] in [16, 29, 39, 768], f"Wrong shape: {feat.shape} in {filename}"
-            #     '''
-            #     feat = feat[:, :16] # when time_freq
-            #     assert feat.shape[0] == 93 and feat.shape[1] == 16, f"detected shape {feat.shape}"
-            #     # check there is not any nan
-            #     if np.isnan(feat).any():
-            #         print(f"NaN in {filename}")
-            #         continue
-            #     features.append(feat)
+            features = [np.load(os.path.join(args.in_dir, filename)) for filename in filenames]
                 
             features = np.concatenate(features, axis = 0) #(BS * 93, n_features) where n_features = 30, 39, 768 or ...
             
@@ -96,13 +73,12 @@ def cluster(args):
         ### END OF FITTING LOOP ###
             
         sse = model.inertia_
-        wandb.log({"k" : n_clusters, "SSE" : sse})
-        
-        layer = args.path_to_dataset_csv.split("_")[3] # latent_10_perc_{layer}_layer.csv
+        wandb.log({"k" : n_clusters, "SSE" : sse})        
 
         if args.train_iteration == 1:
             model_name = "k_means_" + str(n_clusters) +  "_morphology"
         elif args.train_iteration == 2:
+            layer = args.path_to_dataset_csv.split("_")[3] # latent_10_perc_{layer}_layer.csv
             model_name = "k_means_" + str(n_clusters) + f"_encoder_" + str(layer)
         else:
             model_name = "k_means_" + str(n_clusters) + "_encoder_9th_layer"
@@ -113,7 +89,7 @@ def cluster(args):
         
         model_name +=  "_" + sse + ".pkl"
         
-        joblib.dump(model, os.path.join("/data/ECG_AF/ECG_pretraining/HuBERT/kmeans", model_name))
+        joblib.dump(model, os.path.join("./kmeans", model_name))
         logger.info(f"{model_name} model saved.\n")
         
         n_clusters = n_clusters + args.step
@@ -135,7 +111,6 @@ def evaluate_clustering(args):
         pretrain = False,
         encode = True
     )
-    
   
     dataloader = DataLoader(
         data_set,
@@ -154,25 +129,6 @@ def evaluate_clustering(args):
     for _, filenames in tqdm(dataloader, total = len(dataloader)):
 
             features = [np.load(os.path.join(args.in_dir, filename)) for filename in filenames] 
-            
-            # build the batch from filenames returned by the dataloader
-            
-            # features = []
-            # for filename in filenames:
-            #     feat = np.load(os.path.join(args.in_dir, filename))
-                
-            #     if feat.shape[1] == 30:
-            #         # take first 16 elems, skip one, take last 13 elems
-            #         feat = np.concatenate((feat[:, :16], feat[:, 17:]), axis = 1)
-            #     assert feat.shape[0] == 93 and feat.shape[1] in [16, 29, 39, 768], f"Wrong shape: {feat.shape} in {filename}"
-                
-            #     # feat = feat[:, :16] # when time_freq
-            #     # assert feat.shape[0] == 93 and feat.shape[1] == 16, f"detected shape {feat.shape}"
-            #     # check there is not any nan
-            #     if np.isnan(feat).any():
-            #         print(f"NaN in {filename}")
-            #         continue
-            #     features.append(feat)
                 
             features = np.concatenate(features, axis = 0) #(BS * 93, n_features) where n_features = 30, 39, 768 or ...
             
