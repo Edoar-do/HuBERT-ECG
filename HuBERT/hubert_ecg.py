@@ -154,17 +154,6 @@ class HuBERTECG(HubertPreTrainedModel):
         ) / 0.1 for projected_output, label_emb in zip(projected_outputs, self.label_embedding)]
         
         return ensamble_logits #returns [(BS, T, V)] * ensamble_length
-        
-
-    # def logits(self, transformer_output: torch.Tensor) -> torch.Tensor:
-    #     #takes (B, T, D)
-    #     projected_output = self.final_proj(transformer_output) #(B, T, C)
-    #     logits = torch.cosine_similarity(
-    #         projected_output.unsqueeze(2),
-    #         self.label_embedding.weight.unsqueeze(0).unsqueeze(0),
-    #         dim=-1,
-    #     )
-    #     return logits / 0.1 #returns (BS, T, V)
 
     def _mask_hidden_states(
         self,
