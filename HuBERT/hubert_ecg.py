@@ -1,24 +1,124 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import random
 import numpy as np
-import copy
 from transformers import HubertPreTrainedModel, HubertConfig
-from transformers.models.hubert.modeling_hubert import HubertFeatureEncoder, HubertFeatureProjection, HubertEncoder, HubertEncoderStableLayerNorm
+from transformers.models.hubert.modeling_hubert import HubertFeatureProjection, HubertEncoder, HubertEncoderStableLayerNorm
 from transformers.modeling_outputs import BaseModelOutput
-from transformers.modeling_utils import PreTrainedModel
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, List
+from transformers import activations
 
-from dataset import ECGDatasetSelfSupervised as ECGDataset
-import pandas as pd
+NUMBER_OF_LEADS = 12
 
-class HuBERT(HubertPreTrainedModel):
-    def __init__(self, config: HubertConfig):
-        super().__init__(config)
+class HubertNoLayerNormConvLayer(nn.Module):
+    def __init__(self, config, layer_id=0, leads_as_channels=False):
+        super().__init__()
+        self.in_conv_dim = (config.conv_dim[layer_id - 1] if layer_id > 0 else 1) if not leads_as_channels else NUMBER_OF_LEADS
+        self.out_conv_dim = config.conv_dim[layer_id]
+
+        self.conv = nn.Conv1d(
+            self.in_conv_dim,
+            self.out_conv_dim,
+            kernel_size=config.conv_kernel[layer_id],
+            stride=config.conv_stride[layer_id],
+            bias=config.conv_bias,
+        )
+        self.activation = activations.ACT2FN[config.feat_extract_activation]
+
+    def forward(self, hidden_states):
+        hidden_states = self.conv(hidden_states)
+        hidden_states = self.activation(hidden_states)
+        return hidden_states
+
+class HubertLayerNormConvLayer(nn.Module):
+    def __init__(self, config, layer_id=0, leads_as_channels=False):
+        super().__init__()
+        self.in_conv_dim = (config.conv_dim[layer_id - 1] if layer_id > 0 else 1) if not leads_as_channels else NUMBER_OF_LEADS
+        self.out_conv_dim = config.conv_dim[layer_id]
+
+        self.conv = nn.Conv1d(
+            self.in_conv_dim,
+            self.out_conv_dim,
+            kernel_size=config.conv_kernel[layer_id],
+            stride=config.conv_stride[layer_id],
+            bias=config.conv_bias,
+        )
+        self.layer_norm = nn.LayerNorm(self.out_conv_dim, elementwise_affine=True)
+        self.activation = activations.ACT2FN[config.feat_extract_activation]
+
+    def forward(self, hidden_states):
+        hidden_states = self.conv(hidden_states)
+
+        hidden_states = hidden_states.transpose(-2, -1)
+        hidden_states = self.layer_norm(hidden_states)
+        hidden_states = hidden_states.transpose(-2, -1)
+
+        hidden_states = self.activation(hidden_states)
+        return hidden_states
+
+class HubertGroupNormConvLayer(nn.Module):
+    def __init__(self, config, layer_id=0, leads_as_channels=False):
+        super().__init__()
+        self.in_conv_dim = (config.conv_dim[layer_id - 1] if layer_id > 0 else 1) if not leads_as_channels else NUMBER_OF_LEADS
+        self.out_conv_dim = config.conv_dim[layer_id]
+
+        self.conv = nn.Conv1d(
+            self.in_conv_dim,
+            self.out_conv_dim,
+            kernel_size=config.conv_kernel[layer_id],
+            stride=config.conv_stride[layer_id],
+            bias=config.conv_bias,
+        )
+
+        self.activation = activations.ACT2FN[config.feat_extract_activation]
+
+        self.layer_norm = nn.GroupNorm(num_groups=self.out_conv_dim, num_channels=self.out_conv_dim, affine=True)
+
+    def forward(self, hidden_states):
+        hidden_states = self.conv(hidden_states)
+        hidden_states = self.layer_norm(hidden_states)
+        hidden_states = self.activation(hidden_states)
+        return hidden_states
+    
+class HubertFeatureEncoder(nn.Module):
+    def __init__(self, config, leads_as_channels=False):
+        super().__init__()
+        
+        self.leads_as_channels = leads_as_channels
+
+        if config.feat_extract_norm == "group":
+            conv_layers = [HubertGroupNormConvLayer(config, layer_id=0, leads_as_channels=leads_as_channels)] + [
+                HubertNoLayerNormConvLayer(config, layer_id=i+1) for i in range(config.num_feat_extract_layers - 1)
+                ]
+        elif config.feat_extract_norm == "layer":
+            conv_layers = [HubertLayerNormConvLayer(config, layer_id=i) for i in range(config.num_feat_extract_layers)]
+        else:
+            raise ValueError(f"`config.feat_exctract_norm` is {config.feat_exctract_norm}, but has to be one of ['group', 'layer']")
+        self.conv_layers = nn.ModuleList(conv_layers)
+        self.gradient_checkpointing = False
+        self._requires_grad = True
+                                                                                                                                      
+    def forward(self, input_values):
+        # if leads_as_channels, then input_values is (BS, 12, T). Otherwise, it is (BS, T)
+        hidden_states = input_values[:, None] if not self.leads_as_channels else input_values
+
+        if self._requires_grad and self.training:
+            hidden_states.requires_grad = True
+
+        for conv_layer in self.conv_layers:
+            if self._requires_grad and self.gradient_checkpointing and self.training:
+                hidden_states = self._gradient_checkpointing_func(conv_layer.__call__, hidden_states)
+            else:
+                hidden_states = conv_layer(hidden_states)
+
+        return hidden_states 
+    
+class HuBERTECG(HubertPreTrainedModel):
+    def __init__(self, config: HubertConfig, leads_as_channels : bool = False, ensamble_length : int = 1, vocab_sizes : List[int] = [100, 200]):
+        super(HubertPreTrainedModel, self).__init__(config)
         self.config = config
-        self.feature_extractor = HubertFeatureEncoder(config)
+        self.feature_extractor = HubertFeatureEncoder(config, leads_as_channels=leads_as_channels) 
         self.feature_projection = HubertFeatureProjection(config)
+        self.pretraining_vocab_sizes = vocab_sizes if type(vocab_sizes) == list else [vocab_sizes] # if int is passed
 
         if config.mask_time_prob > 0.0 or config.mask_feature_prob > 0.0:
             self.masked_spec_embed = nn.Parameter(torch.FloatTensor(config.hidden_size).uniform_())
@@ -27,25 +127,44 @@ class HuBERT(HubertPreTrainedModel):
             self.encoder = HubertEncoderStableLayerNorm(config)
         else:
             self.encoder = HubertEncoder(config)
+            
+        assert ensamble_length > 0 and ensamble_length == len(vocab_sizes), f"ensamble_length {ensamble_length} must be equal to len(vocab_sizes) {len(vocab_sizes)}"
 
-        #final projection layer
-        self.final_proj = nn.Linear(config.hidden_size, config.classifier_proj_size)
+        #final projection layer to map encodings into the space of the codebook
+        self.final_proj = nn.ModuleList(nn.Linear(config.hidden_size, config.classifier_proj_size) for _ in range(ensamble_length))
 
-        #embedding for codebook
-        self.label_embedding = nn.Embedding(config.vocab_size, config.classifier_proj_size)
+        #embedding for codebooks
+        self.label_embedding = nn.ModuleList(nn.Embedding(vocab_size, config.classifier_proj_size) for vocab_size in vocab_sizes)
+        
+        assert len(self.final_proj) == len(self.label_embedding), f"final_proj and label_embedding must have the same length"
 
         # Initialize weights and apply final processing
         self.post_init()
-
+        
     def logits(self, transformer_output: torch.Tensor) -> torch.Tensor:
         #takes (B, T, D)
-        projected_output = self.final_proj(transformer_output) #(B, T, C)
-        logits = torch.cosine_similarity(
+        
+        # compute a projected output for each ensamble
+        projected_outputs = [final_projection(transformer_output) for final_projection in self.final_proj]
+        
+        ensamble_logits = [torch.cosine_similarity(
             projected_output.unsqueeze(2),
-            self.label_embedding.weight.unsqueeze(0).unsqueeze(0),
+            label_emb.weight.unsqueeze(0).unsqueeze(0),
             dim=-1,
-        )
-        return logits / 0.1 #returns (BS, T, V)
+        ) / 0.1 for projected_output, label_emb in zip(projected_outputs, self.label_embedding)]
+        
+        return ensamble_logits #returns [(BS, T, V)] * ensamble_length
+        
+
+    # def logits(self, transformer_output: torch.Tensor) -> torch.Tensor:
+    #     #takes (B, T, D)
+    #     projected_output = self.final_proj(transformer_output) #(B, T, C)
+    #     logits = torch.cosine_similarity(
+    #         projected_output.unsqueeze(2),
+    #         self.label_embedding.weight.unsqueeze(0).unsqueeze(0),
+    #         dim=-1,
+    #     )
+    #     return logits / 0.1 #returns (BS, T, V)
 
     def _mask_hidden_states(
         self,
@@ -130,7 +249,7 @@ class HuBERT(HubertPreTrainedModel):
         hidden_states = encoder_outputs[0]
 
         if not return_dict:
-            return (hidden_states,) + encoder_outputs[1:], mask_time_indices
+            return (hidden_states,) + encoder_outputs[1:] + mask_time_indices
 
         final_dict = BaseModelOutput(
             last_hidden_state=hidden_states,
@@ -257,67 +376,3 @@ def _compute_mask_indices(
     np.put_along_axis(spec_aug_mask, spec_aug_mask_idxs, 1, -1)
 
     return spec_aug_mask
-
-
-# if __name__ == "__main__":
-
-#     config = HubertConfig(
-#         vocab_size = 100,
-#         hidden_size = 768,
-#         num_hidden_layers = 12,
-#         num_attention_heads = 12,
-#         intermediate_size = 3072,
-#         hidden_act = 'gelu',
-#         mask_time_prob = 0.5, 
-#         mask_time_length = 10,
-#         mask_time_min_masks = 2,
-#         classifier_proj_size = 256,
-#     ) # + other default params
-
-#     hubert = HuBERT(config)
-
-#     dataframe = pd.read_csv("/data/ECG_AF/train_self_supervised_processed.csv")
-
-#     record = dataframe.iloc[0]
-
-#     data = np.load("/data/ECG_AF/train_self_supervised/" + record.filename)
-#     data = data[:, :2500]
-#     data = np.concatenate(data)
-#     data = torch.from_numpy(data).float()
-#     data = data.unsqueeze(0) #adding batch dimension
-
-#     # print(data.shape) # (1, 12*2500)
-
-#     # By passing no mask_time_indices to forward, if the model is in training mode and the mask_prob > 0, then masking will be applied
-
-#     out_encoder = hubert(data, attention_mask = None, output_attentions=True, output_hidden_states=True, return_dict=True)
-
-#     print("out_encoder keys: ", out_encoder.keys()) # dict_keys(['last_hidden_state', 'hidden_states', 'attentions', 'mask_time_indices'])
-#     print("out_encoder.last_hidden_state.shape: ", out_encoder['last_hidden_state'].shape) # (BS, F, D)
-#     print("out_encoder.hidden_states.length: ", len(out_encoder['hidden_states'])) # num_encoder_layers + 1
-#     print("out_encoder.hidden_states[0].shape: ", out_encoder['hidden_states'][0].shape) # (BS, F, D)
-#     # print("out_enoder.attentions.length: ", len(out_encoder['attentions'])) # num_encoder_layers
-#     # print("out_encoder.attentions[0].shape: ", out_encoder['attentions'][0].shape) # (BS, N, F, F)
-#     print("out_encoder.mask_time_indices.shape: ", out_encoder['mask_time_indices'].shape) # (BS, F), bool
-
-#     logits = hubert.logits(out_encoder['last_hidden_state']) #(BS, F, V)
-
-#     print("Logists.shape: ", logits.shape)
-
-#     labels = torch.randint(0, config.vocab_size, (1, 93)) # (BS, F), values ranging from 0 to vocab_size-1
-
-#     print("Labels.shape: ", labels.shape)
-
-#     mask = out_encoder['mask_time_indices']
-
-#     masked_loss = F.cross_entropy(logits[mask], labels[mask])
-
-#     print("Masked loss: ", masked_loss)
-
-#     unmasked_loss = F.cross_entropy(logits[~mask], labels[~mask])
-
-#     print("Unmasked loss: ", unmasked_loss)
-
-#     loss = 0.5 * masked_loss + 0.5 * unmasked_loss
-
-#     print("Loss: ", loss)
