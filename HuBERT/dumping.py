@@ -199,11 +199,6 @@ def dump_latent_features(path_to_dataset_csv, in_dir, dest_dir, start_perc, end_
         
         features = features.cpu().numpy() # (B, n_tokens, D)
         
-        # # save batched features in a single file
-        # path = os.path.join(dest_dir, f"batch_{i}.npy")
-        # block_mapping[path] = ecg_filenames
-        # np.save(path[:-4], features)
-        
         ecg_paths = [os.path.join(dest_dir, ecg_filename[:-4]) for ecg_filename in ecg_filenames] # new list for every batch
         
         with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -253,25 +248,18 @@ if __name__ == "__main__":
         type=int,
         choices=[1, 2, 3]
     )
-
-    # "/data/ECG_AF/{}_self_supervised_processed.csv" - {train, val, test}
-
+    
     parser.add_argument(
         "dataframe_path",
         help="Path to the dataframe object in csv format",
         type=str
     )
-
-    # "/data/ECG_AF/{}_self_supervised" - {train, val, test}
-
     parser.add_argument(
         "in_dir",
         help="Input directory where real files (those pointed by dataframe object) are",
         type=str
     )
-    
-    # /data/ECG_AF/{}_{} - {hubert_features, encoder_6_features, encoder_9_features, prova_features, prova_features_6, prova_features_9}, {train, val, test}
-    
+        
     parser.add_argument(
         "dest_dir",
         help="Where to dump features extracted from files",
