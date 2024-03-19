@@ -126,12 +126,14 @@ def multilabel_split(path_to_csv_file, test_size=0.25, val_size=0.6):
     test.to_csv(path_to_csv_file[:-4] + "_test.csv", index=False)
 
 if __name__ == '__main__':
-    multilabel_split("/data/ECG_AF/ptb_all.csv")  # 71 labels
-    multilabel_split("/data/ECG_AF/ptb_diag.csv") # 44 labels
-    multilabel_split("/data/ECG_AF/ptb_form.csv") # 19 labels  
-    multilabel_split("/data/ECG_AF/ptb_rhythm.csv") # 12 labels
-    multilabel_split("/data/ECG_AF/ptb_diag_subclass.csv") # 23 labels
-    multilabel_split("/data/ECG_AF/ptb_diag_superclass.csv") # 5 labels     
+
+    # ptb splits
+    # multilabel_split("/data/ECG_AF/ptb_all.csv")  # 71 labels
+    # multilabel_split("/data/ECG_AF/ptb_diag.csv") # 44 labels
+    # multilabel_split("/data/ECG_AF/ptb_form.csv") # 19 labels  
+    # multilabel_split("/data/ECG_AF/ptb_rhythm.csv") # 12 labels
+    # multilabel_split("/data/ECG_AF/ptb_diag_subclass.csv") # 23 labels
+    # multilabel_split("/data/ECG_AF/ptb_diag_superclass.csv") # 5 labels     
 
 
 
