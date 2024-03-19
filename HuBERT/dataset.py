@@ -59,7 +59,6 @@ class ECGDataset(Dataset):
             # filter out commented lines
             kmeans_paths = [path for path in kmeans_paths if not path.startswith("#")]
             
-            # logging just for testing purposes
             logger.info(f"Loading {len(kmeans_paths)} kmeans models...")
             for path in kmeans_paths:
                 logger.info(f"Loading {path.strip()}...")
@@ -92,25 +91,15 @@ class ECGDataset(Dataset):
         record = self.ecg_dataframe.iloc[idx]
         ecg_filename = record['filename'] # the mere filename
 
-        if  "/" in ecg_filename: # labelled datasets have filenames as full paths
+        if os.path.isfile(ecg_filename): # labelled datasets have full paths as filenames
             ecg_path = ecg_filename
         else:
             ecg_path =  os.path.join(self.ecg_dir_path, ecg_filename)
 
         ecg_data = np.load(ecg_path) # (12, 5000+)
-        
-        # check if ecg_data has been corrupted
-        if np.isnan(ecg_data).any():
-            logger.warning(f"Corrupted data found in {ecg_path}")
-            with open("logs.txt", 'a') as f:
-                f.write(f"Corrupted data found in {ecg_path}\n")
-            return None
             
         # cut to 5 seconds
         ecg_data = ecg_data[:, :2500] # (12, 2500)
-        
-        mask = np.isnan(ecg_data)
-        ecg_data = np.where(mask, ecg_data[~mask].mean(), ecg_data)
         
         # flatten the leads 
         ecg_data = ecg_data.reshape(-1) # (12*2500,)
@@ -127,29 +116,13 @@ class ECGDataset(Dataset):
                 attention_mask = self.compute_attention_mask_for_padding(ecg_data)
         
             
-        if self.pretrain:
+        if self.pretrain:          
             
-            try:
-                feat_path = os.path.join(self.features_path, ecg_filename)
-                features = np.load(feat_path, allow_pickle=True) #(n_tokens, *) or (64, n_tokens, *), * = 39 if train_iteration==1, else d_model
-            except:
-                logger.warning(f"features {feat_path} not found")
-                with open("logs.txt", 'a') as f:
-                    f.write(f"features {feat_path} not  found\n")
-                
-            ###
-            #features = features[:, :16] # time freq            
-            #assert features.shape[0] == 93 and features.shape[1] == 16, f"features shape {features.shape} not as expected"
-            ###
-
-            try:                
-                # [ensamble_length, n_tokens], where values on row i-th are in [0, V_i - 1] and V_i is the number of clusters for the i-th kmeans model
-                labels = [kmeans.predict(features).tolist() for kmeans in self.ensamble_kmeans] 
-            except ValueError as e:
-                logger.warning(f"Exception {e}")
-                with open("logs.txt", 'a') as f:
-                    f.write(f"features {ecg_filename} cannot be fed into kmeans model {kmeans.cluster_centers_.shape}. features shape {features.shape}\n")
-            # labels are (ensamble_length, n_tokens, ) --> becomes (bs, ensamble_length, n_tokens) when batched by dataloader.
+            feat_path = os.path.join(self.features_path, ecg_filename)
+            features = np.load(feat_path, allow_pickle=True) #(n_tokens, n_features)
+            
+            # [ensamble_length, n_tokens], where values on row i-th are in [0, V_i - 1] and V_i is the number of clusters for the i-th kmeans model
+            labels = [kmeans.predict(features).tolist() for kmeans in self.ensamble_kmeans] 
             
             output = (
                 torch.from_numpy(ecg_data.copy()).float(),
@@ -248,11 +221,4 @@ class ECGDataset(Dataset):
         attention_mask = np.repeat([attention_mask], 12, axis=0) # since the leads are temporally aligned, interest regions should be located within the same intervals
         attention_mask = np.concatenate(attention_mask, axis=0) 
         
-        return attention_mask # 
-    
-    #def collate(self, batch):
-        #ecg_data, attention_masks, labels = tuple(zip(*batch))
-        #ecg_data = torch.stack(ecg_data, dim=0)
-        #attention_masks = torch.stack(attention_masks, dim=0)
-        #labels = torch.stack(labels, dim=0)
-        #return ecg_data, attention_masks, labels       
+        return attention_mask 
