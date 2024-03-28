@@ -43,7 +43,6 @@ def cluster(args):
         
         logger.info(f"Training kmeans with {n_clusters} clusters...")
         
-        # model creation with same batch size as in the dataloader
         model = MiniBatchKMeans(
             n_clusters = n_clusters,
             random_state = 42,
@@ -53,21 +52,19 @@ def cluster(args):
             max_no_improvement = 100,
             reassignment_ratio = 0.0
         )
-        
-        # retrive features from dataloader
-        
+                
         ### FITTING LOOP ###
         
         for _, filenames in tqdm(dataloader, total = len(dataloader)):
 
             features = [np.load(os.path.join(args.in_dir, filename)) for filename in filenames]
                 
-            features = np.concatenate(features, axis = 0) #(BS * 93, n_features) where n_features = 30, 39, 768 or ...
+            features = np.concatenate(features, axis = 0) #(BS * 93, n_features) where n_features = 29, 39, 768 or ...
             
             # normalize features in the batch
             features = preprocessing.Normalizer().fit_transform(features)
             
-            # train kmeans
+            # fit kmeans with data in the batch
             model.partial_fit(features) 
             
         ### END OF FITTING LOOP ###
@@ -78,7 +75,7 @@ def cluster(args):
         if args.train_iteration == 1:
             model_name = "k_means_" + str(n_clusters) +  "_morphology"
         elif args.train_iteration == 2:
-            layer = args.path_to_dataset_csv.split("_")[3] # latent_10_perc_{layer}_layer.csv
+            layer = args.path_to_dataset_csv.split("_")[3] 
             model_name = "k_means_" + str(n_clusters) + f"_encoder_" + str(layer)
         else:
             model_name = "k_means_" + str(n_clusters) + "_encoder_9th_layer"
@@ -130,7 +127,7 @@ def evaluate_clustering(args):
 
             features = [np.load(os.path.join(args.in_dir, filename)) for filename in filenames] 
                 
-            features = np.concatenate(features, axis = 0) #(BS * 93, n_features) where n_features = 30, 39, 768 or ...
+            features = np.concatenate(features, axis = 0) # (BS * 93, n_features) where n_features = 30, 39, 768 or ...
             
             # normalize features in the batch
             features = preprocessing.Normalizer().fit_transform(features)
