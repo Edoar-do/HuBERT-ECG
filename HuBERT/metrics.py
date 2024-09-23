@@ -19,7 +19,13 @@ MAPPING = {
             'CLBBB' : 'CLBBB|LBBB',
             'SVPB' : 'PAC|SVPB',
             'PAC' : 'PAC|SVPB',
-            'LAE' : 'LAO/LAE',
+            'SVPB|PAC' : 'PAC|SVPB',
+            'LAE' : 'LAH',
+            "LAO" : 'LAH',
+            "RAO" : 'RAH',
+            "RAE" : 'RAH',
+            "LAO/LAE" : 'LAH',
+            "RAO/RAE" : 'RAH',
             'LQT' : 'LNGQT',
             'SB' : 'SBRAD',
             'ST' : 'STACH',
@@ -28,10 +34,25 @@ MAPPING = {
             'TAB_' : 'TAB',
             'SA' : 'SARRH',
             "QWAVE" : "QAB",
+            "PVC" : "VPC|VPB",
             "VPB" : "VPC|VPB",
             "VPC" : "VPC|VPB",
-            
+            "PVC|VPB" : "VPC|VPB",
+            "IIAVBII" : "2AVB2",
+            "CCR" : "-ROT",
+            "CR" : "+ROT",
+            "_AVB" : "AVB",  
+            "SVTAC" : "SVT",
+            "LANFB" : "LAFB", 
+            "INVT" : "TINV",
+            "ISCIN" : "IIS",
+            "ISCAN" : "ANMIS",
+            'DEATH' : "SAMITROP-DEATH",
+            "MOI" : "2AVB1",
+            "CHB" : "3AVB",
+            "CMI" : "CMIS"                
 }
+
 def compute_modified_confusion_matrix(labels, outputs):
     # Compute a binary multi-class, multi-label confusion matrix, where the rows
     # are the labels and the columns are the outputs.
@@ -54,7 +75,11 @@ def compute_modified_confusion_matrix(labels, outputs):
     return A
 
 class CinC2020(Metric):
-    def __init__(self, conditions, weights_path : str = "/data/ECG_AF/weights_abbreviations.csv", verbose : bool = False):
+            '''
+            Pytorch implementation of the CinC2020 Physionet Challenge metric.
+            Only weighted conditions are considered
+            '''
+    def __init__(self, conditions, weights_path : str = "/path/to/weights.csv", verbose : bool = False):
         super().__init__()
         self.verbose = verbose
         self.add_state("gt", default=[], dist_reduce_fx="cat")
