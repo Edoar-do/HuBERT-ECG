@@ -27,7 +27,7 @@ import random
 
 EPS = 1e-9
 MINIMAL_IMPROVEMENT = 1e-3
-SUPERVISED_MODEL_CKPT_PATH = "/data/ECG_AF/ECG_pretraining/models/checkpoints/supervised/"
+SUPERVISED_MODEL_CKPT_PATH = "/path/to/folder/for/finetuned/models"
 DROPOUT_DYNAMIC_REG_FACTOR = 0.05
     
 
@@ -51,7 +51,7 @@ def finetune(args):
     device = torch.device('cuda')
     
     ### NOTE: comment for sweeps, uncomment for normal run ###
-    wandb.init(entity="cardi-ai", project="ECG-pretraining", group="supervised")
+    wandb.init(entity="your-entity", project="your-project", group="your-group")
 
     if args.wandb_run_name is not None:
         wandb.run.name = args.wandb_run_name
@@ -63,7 +63,7 @@ def finetune(args):
     
     train_set = ECGDataset(
         path_to_dataset_csv=args.path_to_dataset_csv_train,
-        ecg_dir_path="/data/ECG_AF/train_self_supervised",
+        ecg_dir_path="/path/to/raw/train/ecgs",
         label_start_index=args.label_start_index,
         downsampling_factor=args.downsampling_factor,
         pretrain=False,
@@ -74,7 +74,7 @@ def finetune(args):
 
     val_set = ECGDataset(
         path_to_dataset_csv=args.path_to_dataset_csv_val,
-        ecg_dir_path="/data/ECG_AF/val_self_supervised",
+        ecg_dir_path="/path/to/raw/val/ecgs",
         label_start_index=args.label_start_index,
         downsampling_factor=args.downsampling_factor,
         pretrain=False,
@@ -151,7 +151,7 @@ def finetune(args):
             hubert.set_transformer_blocks_trainable(n_blocks=args.transformer_blocks_to_unfreeze)
             hubert.set_feature_extractor_trainable(args.unfreeze_conv_embedder)
             
-        # if layuer_wise_lr, then set a higher lr for deeper transformer layers + head than that of the rest of the trainable body of the model
+        # if layer_wise_lr, then set a higher lr for deeper transformer layers + head than that of the rest of the trainable body of the model
         parameters_group = []    
         if args.layer_wise_lr and all(p.requires_grad for p in hubert.hubert_ecg.encoder.layers.parameters()):
             parameters_group.append({"params": hubert.hubert_ecg.feature_projection.parameters(), "lr": 1e-7})
@@ -467,19 +467,19 @@ def finetune(args):
                     
                 # compute metrics on whole validation set and log them
                 # such metrics are vectors num_labels long containing the metric for each label
+                macros = []
                 for name, metric in metrics.items():
                     score = metric.compute()
                     macro = score.mean()
+                    macros.append(macro)
                     logger.info(f"Validation {name} = {score}, macro: {macro}")
-                    wandb.log({f"Validation_{name}": macro})
                     if name == args.target_metric:
                         target_score = macro
-                
-                # log losses
-                wandb.log({
-                    "Training_loss": train_loss,
-                    "Validation_loss": val_loss,
-                    })
+
+                dict_to_log = {f"Validation_{name}": macro for name, macro in zip(metrics.keys(), macros)})
+                dict_to_log["Training_loss"] = train_loss
+                dict_to_log["Validation_loss"] = val_loss
+                wandb.log(dict_to_log)
                     
                 hubert.train()
                 
@@ -880,7 +880,7 @@ if __name__ == "__main__":
     
     ### NOTE: this is to test sweeps ###
 
-    # wandb.init(entity="cardi-ai", project="ECG-pretraining", group=("supervised"))
+    # wandb.init(entity="your-entity", project="your-project", group="your-group")
     
     # args = wandb.config
 
