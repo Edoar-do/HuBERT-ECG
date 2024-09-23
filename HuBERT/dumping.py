@@ -95,7 +95,6 @@ def dump_ecg_features(record, in_dir, dest_dir, mfcc_only, time_freq, device, sa
         cnn_compression_factor = CNN_COMPRESSION_FACTOR_50
     
     if np.load(path).shape[0] != 93: #if features do not exist then calculate them, skip otherwise
-    #if np.isnan(np.load(path)).any(): #recompute features if previusly saved features contain nan
         
         data = np.load(os.path.join(in_dir, filename))
         data = data[:, :2500]
@@ -256,24 +255,18 @@ if __name__ == "__main__":
         choices=[1, 2, 3]
     )
 
-    # "/data/ECG_AF/{}_self_supervised_processed.csv" - {train, val, test}
-
     parser.add_argument(
         "dataframe_path",
         help="Path to the dataframe object in csv format",
         type=str
     )
 
-    # "/data/ECG_AF/{}_self_supervised" - {train, val, test}
-
     parser.add_argument(
         "in_dir",
         help="Input directory where real files (those pointed by dataframe object) are",
         type=str
     )
-    
-    # /data/ECG_AF/{}_{} - {hubert_features, encoder_6_features, encoder_9_features, prova_features, prova_features_6, prova_features_9}, {train, val, test}
-    
+        
     parser.add_argument(
         "dest_dir",
         help="Where to dump features extracted from files",
@@ -345,15 +338,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    #check if train_iteration is valid
     if args.train_iteration < 1 or args.train_iteration > 3:
         raise ValueError(f"train_iteration must be 1, 2 or 3. Inserted {args.train_iteration}.")
 
-    #check if perc is valid
     if args.start_perc < 0. or args.start_perc > 1. or args.end_perc < 0. or args.end_perc > 1.:
         raise ValueError(f"Percentages must be between 0 and 1. Inserted {args.start_perc} and {args.end_perc}.")
 
-    #check if hubert_path is valid
     if args.train_iteration > 1 and args.hubert_path is None:
         raise ValueError("hubert_path must be specified if train_iteration is 2 or 3.")
 
