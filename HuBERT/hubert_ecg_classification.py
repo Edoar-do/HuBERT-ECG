@@ -24,57 +24,80 @@ class ActivationFunction(nn.Module):
         return self.act(x)
 
 class HuBERTForECGClassification(nn.Module):
-    def __init__(self, hubert_ecg : HuBERTECG, num_labels : int, classifier_hidden_size : int = None, activation : str = 'tanh'):
+    def __init__(
+        self,
+        hubert_ecg : HuBERTECG,
+        num_labels : int,
+        classifier_hidden_size : int = None,
+        activation : str = 'tanh',
+        use_label_embedding : bool = False,
+        classifier_dropout_prob : float = 0.1):
         super(HuBERTForECGClassification, self).__init__()
         self.hubert_ecg = hubert_ecg
         self.hubert_ecg.config.mask_time_prob = 0.0 # prevents masking
         self.hubert_ecg.config.mask_feature_prob = 0.0 # prevents masking
         
-        # num_labels may be different from vocab_size when fine_tuning a pretrained hubert_ecg (in that case all modules are reused except embeddings, which could be freezed)
+        # num_labels may be different from vocab_size when fine_tuning a pretrained hubert_ecg (in that case all modules are reused except embeddings, which could be frozen)
         # otherwise, it should (not necessarily) be equal to vocab_size for consistency
         self.num_labels = num_labels
         self.config = self.hubert_ecg.config
         self.classifier_hidden_size = classifier_hidden_size
         self.activation = ActivationFunction(activation)
-        self.final_projection = nn.Linear(self.config.hidden_size, self.config.classifier_proj_size)    
-        
-        # if num_labels == 1 the task is supposed to be a regression
-        if classifier_hidden_size is None: # no hidden layer
-            self.classifier = nn.Linear(self.config.classifier_proj_size, num_labels)
-        else:
-            # mlp head with tanh activation like in ViT
-            self.classifier = nn.Sequential(
-                nn.Linear(self.config.classifier_proj_size, classifier_hidden_size),
-                self.activation,
-                nn.Linear(classifier_hidden_size, num_labels)
-            )
+        # self.final_projection = nn.Linear(self.config.hidden_size, self.config.classifier_proj_size)   #! changed
+        self.use_label_embedding = use_label_embedding 
+        self.classifier_dropout = nn.Dropout(classifier_dropout_prob) # ! to restore
         
         del self.hubert_ecg.label_embedding # not needed for classification
         del self.hubert_ecg.final_proj # not needed for classification
         
-    def set_feature_extractor_trainable(self, trainable : bool):
-        '''Set as (un)trainable the convolutional feature extractor of HuBERTECG'''
-        self.hubert_ecg.feature_extractor.requires_grad_ = trainable
-        
-    # def set_pretraining_label_embeddings_trainable(self, trainable : bool):
-    #     '''Set (un)trainable the label embedding of HuBERTECG'''
-    #     for label_embedding in self.hubert_ecg.label_embeddings:
-    #         label_embedding.requires_grad_ = trainable
-        
-    def set_base_model_trainable(self, trainable : bool):
-        ''' Set every single parameter of HuBERTECG (un)trainable'''
-        for param in self.hubert_ecg.parameters():
-            param.requires_grad = trainable
-    
-    def set_transformer_blocks_trainable(self, trainable : bool, n_blocks : int = None):
-        '''Set as (un)trainable `n_blocks` of the transformer encoder starting from the final and going backward. 
-        If n_blocks is None, all blocks are set as (un)trainable'''
-        if n_blocks is None:
-            self.hubert_ecg.encoder.requires_grad_ = trainable
+        if use_label_embedding: #for classification only
+            # self.label_embedding = nn.Embedding(num_labels, self.config.classifier_proj_size) #! changed
+            self.label_embedding = nn.Embedding(num_labels, self.config.hidden_size) #! to restore
         else:
-            assert n_blocks <= self.config.num_hidden_layers, f"n_blocks must be <= {self.config.num_hidden_layers}"
-            for i in range(self.config.num_hidden_layers - n_blocks, self.config.num_hidden_layers):
-                self.hubert_ecg.encoder.layers[i].requires_grad_ = trainable
+            # if num_labels == 1 the task is supposed to be a regression
+            if classifier_hidden_size is None: # no hidden layer
+                # self.classifier = nn.Linear(self.config.classifier_proj_size, num_labels) #! changed
+                self.classifier = nn.Linear(self.config.hidden_size, num_labels) #! to restore
+            else:
+                # mlp head with tanh activation like in ViT 
+                # ! changed
+                # self.classifier = nn.Sequential(
+                #     nn.Linear(self.config.classifier_proj_size, classifier_hidden_size),
+                #     self.activation,
+                #     nn.Linear(classifier_hidden_size, num_labels)
+                # )
+                #! to restore
+                self.classifier = nn.Sequential(
+                    nn.Linear(self.config.hidden_size, classifier_hidden_size),
+                    self.activation,
+                    nn.Linear(classifier_hidden_size, num_labels)
+                )
+        
+    def set_feature_extractor_trainable(self, trainable : bool):
+        '''Sets as (un)trainable the convolutional feature extractor of HuBERT-ECG'''
+        self.hubert_ecg.feature_extractor.requires_grad_(trainable)
+        
+    # def set_base_model_trainable(self, trainable : bool):
+    #     ''' Set every single parameter of HuBERTECG (un)trainable'''
+    #     self.hubert_ecg.requires_grad_(trainable)
+    
+    def set_transformer_blocks_trainable(self, n_blocks : int):
+        ''' Makes trainable only the last `n_blocks` of HuBERT-ECG transformer encoder'''
+        
+        assert n_blocks >= 0, f"n_blocks (inserted {n_blocks}) should be >= 0"
+        assert n_blocks <= self.hubert_ecg.config.num_hidden_layers, f"n_blocks ({n_blocks}) should be <= {self.hubert_ecg.config.num_hidden_layers}"
+        
+        self.hubert_ecg.encoder.requires_grad_(False)
+        for i in range(1, n_blocks+1):
+            self.hubert_ecg.encoder.layers[-i].requires_grad_(True)
+                
+    def get_logits(self, pooled_output : torch.Tensor):
+        '''Computes cosine similary between transfomer pooled output, referred to as input representation, and look-up embedding matrix, that is a dense representation of labels.
+        In: pooled_output: (B, C) tensor
+        Out: (B, num_labels) tensor of similarities/logits to be sigmoided and used in BCE loss
+        '''
+        logits = torch.cosine_similarity(pooled_output.unsqueeze(1), self.label_embedding.weight.unsqueeze(0), dim=-1)
+        return logits
             
     def forward(
         self,
@@ -97,7 +120,8 @@ class HuBERTForECGClassification(nn.Module):
                 return_dict=return_dict
             ) # (B, T, D)
         
-        x = self.final_projection(encodings.last_hidden_state) # (B, T, C)
+        # x = self.final_projection(encodings.last_hidden_state) # (B, T, C) #! changed
+        x = encodings.last_hidden_state #! to restore
         
         if attention_mask is None:
             x = x.mean(dim=1) # (B, C)
@@ -105,9 +129,16 @@ class HuBERTForECGClassification(nn.Module):
             padding_mask = self.hubert_ecg._get_feature_vector_attention_mask(x.shape[1], attention_mask)
             x[~padding_mask] = 0.0
             x = x.sum(dim=1) / padding_mask.sum(dim=1).view(-1, 1)
+            
+        x = self.classifier_dropout(x) #! to restore
         
         # (logits, hubert_output_dict)
         # (B, num_labels), hidden_states, attentions
-        return self.classifier(x), encodings
+        output = (
+            self.get_logits(x) if self.use_label_embedding else self.classifier(x),
+            encodings
+        )
+        
+        return output
         
         

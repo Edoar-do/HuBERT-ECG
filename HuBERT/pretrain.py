@@ -46,6 +46,9 @@ def train(args):
     ### NOTE: comment for sweeps, uncomment for normal run ###
     wandb.init(entity="cardi-ai", project="ECG-pretraining", group="self-supervised")
 
+    if args.wandb_run_name is not None:
+        wandb.run.name = args.wandb_run_name
+
     ### fixing seeds ###
     torch.manual_seed(42)
     torch.cuda.manual_seed(42)
@@ -60,7 +63,7 @@ def train(args):
     accumulation_steps = args.accumulation_steps
     mask_time_prob = args.mask_time_prob
     
-    ### base model hyperparams ###
+    ### size model hyperparams ###
     if args.largeness == "base":
         hidden_size = 768
         num_hidden_layers = 12
@@ -69,19 +72,21 @@ def train(args):
         classifier_proj_size = 256
         layerdrop = 0.1
     elif args.largeness == "large":
-        hidden_size = 1024
-        num_hidden_layers = 24
-        num_attention_heads = 16
-        intermediate_size = 4096
-        classifier_proj_size = 768
+        hidden_size = 960
+        num_hidden_layers = 16
+        num_attention_heads = 12
+        intermediate_size = 3840
+        classifier_proj_size = 512
         layerdrop = 0.0
-    else: # x-large
-        hidden_size = 1280
-        num_hidden_layers = 48
-        num_attention_heads = 16
-        intermediate_size = 5120
-        classifier_proj_size = 1024
-        layerdrop = 0.0
+    elif args.largeness == 'small': # small
+        hidden_size = 512
+        num_hidden_layers = 8
+        num_attention_heads = 8
+        intermediate_size = 2048
+        classifier_proj_size = 256
+        layerdrop = 0.1
+    else:
+        raise ValueError(f"Model largeness {args.largeness} not supported")
     
         
     if args.resume_pretraining:
@@ -89,7 +94,7 @@ def train(args):
         logger.info(f"Loading checkpoint {hubert_name} to resume pretraining")
         
         checkpoint = torch.load(args.load_path, map_location = torch.device('cpu'))
-        vocab_sizes = checkpoint['pretraining_vocab_size']
+        vocab_sizes = checkpoint['pretraining_vocab_sizes']
         hubert = HuBERT(checkpoint['model_config'], ensamble_length=1 if type(vocab_sizes) == int else len(vocab_sizes), vocab_sizes=[vocab_sizes] if type(vocab_sizes) != list else vocab_sizes)
         hubert.load_state_dict(checkpoint['model_state_dict'])
 
@@ -243,7 +248,7 @@ def train(args):
         pin_memory=True
         )
 
-    epochs = args.training_steps // (len(train_dl) * accumulation_steps) + 1 if args.training_steps is not None else args.epochs
+    epochs = args.training_steps // (len(train_dl) // accumulation_steps) + 1 if args.training_steps is not None else args.epochs
 
     start_epoch = global_step // len(train_dl)
             
@@ -262,15 +267,20 @@ def train(args):
             attention_mask = attention_mask.to(device) #(BS, 12*2500)
             ensamble_labels = ensamble_labels.to(device) #(BS, ensamble_length, F)
             
+            #logger.info("Mapped data to device")
+
             with amp.autocast():
                
                 out_encoder_dict = hubert(ecg, attention_mask=attention_mask, output_attentions=False, output_hidden_states=False, return_dict=True)
+                #logger.info("Computed encodings")
                 
                 ensamble_logits = hubert.logits(out_encoder_dict['last_hidden_state']) #[(BS, F, V)] * ensamble_length
+                #logger.info("Computed logits")
                 
                 mask = out_encoder_dict['mask_time_indices'] #(BS, F)
                 
-                # modify loss computation to enable ensamble loss (sum of losses)                
+                # modify loss computation to enable ensamble loss (sum of losses)
+                
                 ensamble_labels = ensamble_labels.transpose(0, 1) # (ensamble_length, BS, F)
                 
                 masked_loss = 0
@@ -282,13 +292,16 @@ def train(args):
                     # labels is (BS, F), logits is (BS, F, V)
                     masked_loss += F.cross_entropy(logits[mask], labels[mask])
                     unmasked_loss += F.cross_entropy(logits[~mask], labels[~mask])
+                    #logger.info("Computed masked and unmasked losses per task")
                     
                 loss = args.alpha * masked_loss +  (1 - args.alpha) * unmasked_loss
                 loss = loss / accumulation_steps
                        
             scaler.scale(loss).backward()
             train_losses.append(loss.item())
-                                    
+            
+            #logger.info("Accumulated scaled loss")
+                        
             # scaler.unscale_(optimizer)
             # torch.nn.utils.clip_grad_norm_(hubert.parameters(), 10.)
             
@@ -496,7 +509,7 @@ if __name__ == "__main__":
         "largeness",
         help="Model largeness in {base, large, x-large}",
         type=str,
-        choices=["base", "large", "x-large"]
+        choices=["base", "large", "small"]
     )
     
     #alpha
@@ -599,7 +612,7 @@ if __name__ == "__main__":
         "--weight_decay_mult",
         help="Weight decay. Default 0",
         type=int,
-        default=0
+        default=1
     )
     
     # model_dropout_mult
@@ -608,7 +621,15 @@ if __name__ == "__main__":
         help="Model dropout. Default 0",
         type=int,
         default=0
-    )   
+    )
+
+    # wandb_run_name
+    parser.add_argument(
+        "--wandb_run_name",
+        help="OPT. Wandb run name. Default none",
+        type=str,
+        default=None
+    ) 
      
 
         
@@ -630,7 +651,7 @@ if __name__ == "__main__":
     if args.training_steps is not None and args.training_steps % args.val_interval != 0:
         raise ValueError(f"Argument training_steps must be divisible by argument val_interval. Inserted {args.training_steps} and {args.val_interval}")
     
-    if args.largeness not in ["base", "large", "x-large"]:
+    if args.largeness not in ["base", "large", "small"]:
         raise ValueError(f"Argument largeness must be in [base, large, x-large] range. Inserted {args.largeness}")
     
     if args.mask_time_prob < 0.0 or args.mask_time_prob > 1.0:
