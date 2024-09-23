@@ -29,7 +29,7 @@ import random
 
 EPS = 1e-9
 MINIMAL_IMPROVEMENT = 1e-3
-SUPERVISED_MODEL_CKPT_PATH = "/data/ECG_AF/ECG_pretraining/models/checkpoints/supervised/"
+SUPERVISED_MODEL_CKPT_PATH = "/path/to/folder/for/finetuned/models"
 DROPOUT_DYNAMIC_REG_FACTOR = 0.05
     
 
@@ -53,7 +53,7 @@ def finetune(args):
     device = torch.device('cuda')
     
     ### NOTE: comment for sweeps, uncomment for normal run ###
-    wandb.init(entity="cardi-ai", project="ECG-pretraining", group="supervised")
+    wandb.init(entity="your-entity", project="your_project", group="your-group")
     
     torch.manual_seed(42)
     np.random.seed(42)
@@ -71,10 +71,8 @@ def finetune(args):
         
         checkpoint = torch.load(args.load_path, map_location = 'cpu')
         config = checkpoint['model_config']
-        #config.vocab_size = checkpoint['model_state_dict'][list(checkpoint['model_state_dict'].keys())[-1]].size(0) # vocab size used for pretraining
-        #config.vocab_size = checkpoint["pretraining_vocab_size"]
         vocab_sizes = checkpoint['pretraining_vocab_sizes']
-        leads_as_channels = False # checkpooint['leads_as_channels']
+        leads_as_channels = False 
         pretrained_hubert = HuBERT(config, leads_as_channels=leads_as_channels, ensamble_length=len(vocab_sizes), vocab_sizes = vocab_sizes)
         pretrained_hubert.load_state_dict(checkpoint['model_state_dict'], strict=False)
         
@@ -226,14 +224,12 @@ def finetune(args):
             use_label_embedding=args.use_label_embedding
             )
         
-        hubert.to(device)    
-        
+        hubert.to(device)            
         
         global_step = 0
         best_val_loss = float('inf')
         patience_count = 0
-        best_val_target_score = 0.0
-        
+        best_val_target_score = 0.0        
         
         # ASSUMPTION: the classification head is always trainable
         # transformer_blocks_to_unfreeze is 0 by default meaning that if no input comes from the user, the encoder remains frozen
@@ -437,19 +433,19 @@ def finetune(args):
                     
                 # compute metrics on whole validation set and log them
                 # such metrics are vectors num_labels long containing the metric for each label
+                macros = []
                 for name, metric in metrics.items():
                     score = metric.compute()
                     macro = score.mean()
+                    macros.append(macro)
                     logger.info(f"Validation {name} = {score}, macro: {macro}")
-                    wandb.log({f"Validation_{name}": macro})
                     if name == args.target_metric:
                         target_score = macro
-                
-                # log losses
-                wandb.log({
-                    "Training_loss": train_loss,
-                    "Validation_loss": val_loss,
-                    })
+
+                dict_to_log = {f"Validation_{name}" : macro for name, macro in zip(metrics.keys(), macros)}
+                dict_to_log["Training_loss"] = train_loss
+                dict_to_log["Validation_loss"] = val_loss
+                wandb.log(dict_to_log)
                 
                 if args.target_metric == "cinc2020":
                     target_score = val_cinc2020_score
