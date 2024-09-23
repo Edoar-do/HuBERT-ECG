@@ -71,26 +71,8 @@ def cluster(args):
 
             features = [np.load(os.path.join(args.in_dir, filename)) for filename in filenames] 
 
-            # build the batch from filenames returned by the dataloader
-            
-            # features = []
-            # for filename in filenames:
-            #     feat = np.load(os.path.join(args.in_dir, filename))
-            #     '''
-            #     if feat.shape[1] == 30:
-            #         # take first 16 elems, skip one, take last 13 elems --> mixed
-            #         feat = np.concatenate((feat[:, :16], feat[:, 17:]), axis = 1)
-            #     assert feat.shape[0] == 93 and feat.shape[1] in [16, 29, 39, 768], f"Wrong shape: {feat.shape} in {filename}"
-            #     '''
-            #     feat = feat[:, :16] # when time_freq
-            #     assert feat.shape[0] == 93 and feat.shape[1] == 16, f"detected shape {feat.shape}"
-            #     # check there is not any nan
-            #     if np.isnan(feat).any():
-            #         print(f"NaN in {filename}")
-            #         continue
-            #     features.append(feat)
-                
-            features = np.concatenate(features, axis = 0) #(BS * 93, n_features) where n_features = 30, 39, 768 or ...
+            # build the batch from filenames returned by the dataloader                
+            features = np.concatenate(features, axis = 0) 
             
             # normalize features in the batch
             features = preprocessing.Normalizer().fit_transform(features)
@@ -159,26 +141,8 @@ def evaluate_clustering(args):
 
             features = [np.load(os.path.join(args.in_dir, filename)) for filename in filenames] 
             
-            # build the batch from filenames returned by the dataloader
-            
-            # features = []
-            # for filename in filenames:
-            #     feat = np.load(os.path.join(args.in_dir, filename))
-                
-            #     if feat.shape[1] == 30:
-            #         # take first 16 elems, skip one, take last 13 elems
-            #         feat = np.concatenate((feat[:, :16], feat[:, 17:]), axis = 1)
-            #     assert feat.shape[0] == 93 and feat.shape[1] in [16, 29, 39, 768], f"Wrong shape: {feat.shape} in {filename}"
-                
-            #     # feat = feat[:, :16] # when time_freq
-            #     # assert feat.shape[0] == 93 and feat.shape[1] == 16, f"detected shape {feat.shape}"
-            #     # check there is not any nan
-            #     if np.isnan(feat).any():
-            #         print(f"NaN in {filename}")
-            #         continue
-            #     features.append(feat)
-                
-            features = np.concatenate(features, axis = 0) #(BS * 93, n_features) where n_features = 30, 39, 768 or ...
+            # build the batch from filenames returned by the dataloader                
+            features = np.concatenate(features, axis = 0)
             
             # normalize features in the batch
             features = preprocessing.Normalizer().fit_transform(features)
