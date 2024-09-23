@@ -21,7 +21,7 @@ EPS = 1E-09
 MINIMAL_IMPROVEMENT = 1e-3
 DROPOUT_DYNAMIC_REG_FACTOR = 0.05
 
-SELF_SUPERVISED_MODEL_CKPT_PATH = "/data/ECG_AF/ECG_pretraining/models/checkpoints/self-supervised/"
+SELF_SUPERVISED_MODEL_CKPT_PATH = "/path/to/folder/for/ssl/models"
 
 def dynamic_regularizer(optimizer, model, penalty):
     if penalty:
@@ -44,7 +44,7 @@ def train(args):
     device = torch.device('cuda')
     
     ### NOTE: comment for sweeps, uncomment for normal run ###
-    wandb.init(entity="cardi-ai", project="ECG-pretraining", group="self-supervised")
+    wandb.init(entity="your-entity", project="your-project", group="your-group)
 
     if args.wandb_run_name is not None:
         wandb.run.name = args.wandb_run_name
@@ -263,23 +263,17 @@ def train(args):
 
             global_step += 1
             
-            ecg = ecg.to(device) #(BS, 12*2500)
-            attention_mask = attention_mask.to(device) #(BS, 12*2500)
-            ensamble_labels = ensamble_labels.to(device) #(BS, ensamble_length, F)
-            
-            #logger.info("Mapped data to device")
+            ecg = ecg.to(device) 
+            attention_mask = attention_mask.to(device) 
+            ensamble_labels = ensamble_labels.to(device) 
 
             with amp.autocast():
                
                 out_encoder_dict = hubert(ecg, attention_mask=attention_mask, output_attentions=False, output_hidden_states=False, return_dict=True)
-                #logger.info("Computed encodings")
                 
                 ensamble_logits = hubert.logits(out_encoder_dict['last_hidden_state']) #[(BS, F, V)] * ensamble_length
-                #logger.info("Computed logits")
                 
-                mask = out_encoder_dict['mask_time_indices'] #(BS, F)
-                
-                # modify loss computation to enable ensamble loss (sum of losses)
+                mask = out_encoder_dict['mask_time_indices']
                 
                 ensamble_labels = ensamble_labels.transpose(0, 1) # (ensamble_length, BS, F)
                 
@@ -292,18 +286,12 @@ def train(args):
                     # labels is (BS, F), logits is (BS, F, V)
                     masked_loss += F.cross_entropy(logits[mask], labels[mask])
                     unmasked_loss += F.cross_entropy(logits[~mask], labels[~mask])
-                    #logger.info("Computed masked and unmasked losses per task")
                     
                 loss = args.alpha * masked_loss +  (1 - args.alpha) * unmasked_loss
                 loss = loss / accumulation_steps
                        
             scaler.scale(loss).backward()
             train_losses.append(loss.item())
-            
-            #logger.info("Accumulated scaled loss")
-                        
-            # scaler.unscale_(optimizer)
-            # torch.nn.utils.clip_grad_norm_(hubert.parameters(), 10.)
             
             ### GRADIENT ACCUMULATION ###
             
@@ -685,7 +673,7 @@ if __name__ == "__main__":
     
     ### NOTE: this is to test sweeps ###
 
-    # wandb.init(entity="cardi-ai", project="ECG-pretraining", group=("self-supervised"))
+    # wandb.init(entity="your-entity", project="your-project", group=("your-group"))
     
     # args = wandb.config
 
