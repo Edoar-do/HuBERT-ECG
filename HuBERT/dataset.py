@@ -114,12 +114,14 @@ class ECGDataset(Dataset):
         elif self.random_crop: 
             start = np.random.randint(0, ecg_data.shape[1] - SAMPLES_IN_5_SECONDS_AT_500HZ + 1)
             ecg_data = ecg_data[:, start:start+SAMPLES_IN_5_SECONDS_AT_500HZ]
-        else: 
+        elif self.return_full_length:
             # returns a random 10-sec crop since 10 sec is the maximum length found in literature
             # NOTE: HuBERT-ECG is not designed to handle 10-sec ECGs but 5-sec recordings -> the returned ECG must be cropped to 5-sec once returned
             # strategy used for TTA
             start = np.random.randint(0, ecg_data.shape[1] - SAMPLES_IN_10_SECONDS_AT_500HZ + 1)
-            ecg_data = ecg_data[:, start:start+SAMPLES_IN_10_SECONDS_AT_500HZ]       
+            ecg_data = ecg_data[:, start:start+SAMPLES_IN_10_SECONDS_AT_500HZ]
+        else:
+            ecg_data = ecg_data[:, :SAMPLES_IN_5_SECONDS_AT_500HZ]
         
         mask = np.isnan(ecg_data)
         ecg_data = np.where(mask, ecg_data[~mask].mean(), ecg_data)
