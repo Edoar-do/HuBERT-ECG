@@ -41,15 +41,13 @@ class ECGDataset(Dataset):
         - `encode` = additional boolean value used only to speed up features dumping
         - `beat_based_attention_mask` = optional boolean indicating whether beat-based attention mask should be calculated. Default False
         - `random_crop` = optional boolean indicating whether to randomly crop the ecg signal. Default False. To use only during finetuning and testing to avoid misalignments between signals and features.
-        - `return_full_length` = optional boolean indicating whether to return the full length of the ecg signal. Default False. 
+        - `return_full_length` = optional boolean indicating whether to return the full length (10-sec actually) of the ecg signal. Default False. 
         
         The `__getitem__` method returns:
-        - ecg_data = (12*2500/downsampling_factor,) float tensor
-        - attention_mask = (12*2500/downsampling_factor,) long tensor
+        - ecg_data = (12*length/downsampling_factor,) float tensor, where length = 5000 if `return_full_length` else 2500
+        - attention_mask = (12*length/downsampling_factor,) long tensor, where length = 5000 if `return_full_length` else 2500
         - labels = (ensamble_length, n_tokens,) when `pretrain` is True, (n_classes,) when `pretrain` is False and `encode` is False
         - ecg_filename = string indicating the filename of the ecg item when `encode` is True and `pretrain` is False
-        
-        The "batch_size" dimension is prepended to the returned tensors when the dataloader is used.
         '''
         
         logger.info(f"Loading dataset from {path_to_dataset_csv}...")
