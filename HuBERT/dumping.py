@@ -80,6 +80,9 @@ def dump_ecg_features(record, in_dir, dest_dir, mfcc_only, time_freq, device, sa
         - record from the dataframe apply() function was called on
         - in_dir is the path to th input directory where the data pointed by the record is
         - dest_dir is the path to the output directory where the features will be saved
+        - mfcc_only is a flag used when one wants to compute the 39 MFCCs. It's mutex with time_freq
+        - time_freq is a flag used when one wants to compute the 16 time-frequency features. it's mutex with mfcc_only
+        - samp_rate is an integer indicating the desidered sampling rate. Used when some or all MFCCs are to compute
     '''
     filename = record.filename
     path = os.path.join(dest_dir, filename)
@@ -159,7 +162,20 @@ def dump_ecg_features(record, in_dir, dest_dir, mfcc_only, time_freq, device, sa
     else:
         logger.info(f"Skipping {filename} because features already exist")
 
-def dump_latent_features(path_to_dataset_csv, in_dir, dest_dir, start_perc, end_perc, hubert, output_layer, iteration, batch_size=None):
+def dump_latent_features(path_to_dataset_csv, in_dir, dest_dir, start_perc, end_perc, hubert, output_layer, iteration, batch_size):
+    '''
+    Saves on disk computed latent representation once extracted from `hubert`'s `output_layer`.
+    Args:
+    - path_to_dataset_csv: path to the csv files referencing the ECGs
+    - in_dir: where the ECGs are
+    - dest_dir: where to save the computed representations
+    - start_perc and end_perc indicate the starting and ending point of the csv file of which latents are to compute
+    Example: data_set.ecg_dataframe.iloc[int(start_perc * len(data_set)) : int(end_perc * len(data_set))+1]
+    - hubert: a hubert model used to encode raw ECG into representations
+    - output_layer: the encoding layer from which latents are to be extracted
+    - iteration: iteration id used when saving the csv file referencing the saved representations
+    - batch_size: the batch_size to use when feeding ECGs into hubert. 
+    '''
         
     data_set = ECGDataset(
         path_to_dataset_csv = path_to_dataset_csv,
@@ -178,7 +194,7 @@ def dump_latent_features(path_to_dataset_csv, in_dir, dest_dir, start_perc, end_
     
     dataloader = DataLoader(
         data_set,
-        batch_size=(batch_size if batch_size is not None else 1),
+        batch_size=batch_size,
         num_workers=5,
         collate_fn=data_set.collate,
         drop_last=False
@@ -315,7 +331,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--batch_size",
         help="[OPT.] Batch size to use when dumping latent features. 1 if not provided. Used only when train_iteration > 1",
-        type=int
+        type=int,
+        default=1
     )
 
     parser.add_argument(
