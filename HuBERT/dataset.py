@@ -107,21 +107,19 @@ class ECGDataset(Dataset):
 
         ecg_path = ecg_filename if os.path.isfile(ecg_filename) else os.path.join(self.ecg_dir_path, ecg_filename)
 
-        ecg_data = np.load(ecg_path) # (12, duration)
-            
-        # cut to 5 seconds
-        if self.random_crop and not self.pretrain and not self.encode: # only for finetuning and testing
+        ecg_data = np.load(ecg_path) # (12, any duration)
+
+        if self.pretrain or self.encode:
+            ecg_data = ecg_data[:, :SAMPLES_IN_5_SECONDS_AT_500HZ]
+        elif self.random_crop: 
             start = np.random.randint(0, ecg_data.shape[1] - SAMPLES_IN_5_SECONDS_AT_500HZ + 1)
             ecg_data = ecg_data[:, start:start+SAMPLES_IN_5_SECONDS_AT_500HZ]
-        elif self.return_full_length:
-            # in case there are ecgs with varying length in a dataset, extract a random 10 sec window
-            # such duration is aligned with durations seen in literature
+        else: 
+            # returns a random 10-sec crop since 10 sec is the maximum length found in literature
+            # NOTE: HuBERT-ECG is not designed to handle 10-sec ECGs but 5-sec recordings -> the returned ECG must be cropped to 5-sec once returned
+            # strategy used for TTA
             start = np.random.randint(0, ecg_data.shape[1] - SAMPLES_IN_10_SECONDS_AT_500HZ + 1)
-            ecg_data = ecg_data[:, start:start+SAMPLES_IN_10_SECONDS_AT_500HZ]  
-        else:
-            # default behavior, used in pretraining and encoding, is to extract the first 5 seconds
-            ecg_data = ecg_data[:, :SAMPLES_IN_5_SECONDS_AT_500HZ] # (12, SAMPLES_IN_5_SECONDS_AT_500HZ)
-       
+            ecg_data = ecg_data[:, start:start+SAMPLES_IN_10_SECONDS_AT_500HZ]       
         
         mask = np.isnan(ecg_data)
         ecg_data = np.where(mask, ecg_data[~mask].mean(), ecg_data)
