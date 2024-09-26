@@ -41,7 +41,7 @@ def random_crop(ecg, crop_size=500):
     return new_ecg.view(batch_size, -1)
 
 
-def test(args, model : nn.Module, criterion : nn.functional, metrics : Iterable[nn.Module]):
+def test(args, model : nn.Module, metrics : Iterable[nn.Module]):
     
     #fixing seed
     torch.manual_seed(42)
@@ -239,4 +239,4 @@ if __name__ == "__main__":
 
     ### START TESTING ###
     
-    test(args, hubert, nn.functional.binary_cross_entropy_with_logits, metrics) 
+    test(args, hubert, metrics) 
