@@ -54,9 +54,10 @@ def test(args, model : nn.Module, criterion : nn.functional, metrics : Iterable[
         path_to_dataset_csv = args.path_to_dataset_csv,
         ecg_dir_path = args.ecg_dir_path,
         pretrain = False,
+        encode = False,
+        random_crop = not args.tta,
         downsampling_factor=args.downsampling_factor,
         label_start_index=args.label_start_index,
-        return_full_length=args.tta
     )
     
     dataloader = DataLoader(
