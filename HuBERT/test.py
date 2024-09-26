@@ -55,7 +55,8 @@ def test(args, model : nn.Module, criterion : nn.functional, metrics : Iterable[
         ecg_dir_path = args.ecg_dir_path,
         pretrain = False,
         encode = False,
-        random_crop = not args.tta,
+        random_crop = False,
+        return_full_length = args.tta,
         downsampling_factor=args.downsampling_factor,
         label_start_index=args.label_start_index,
     )
