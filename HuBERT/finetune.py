@@ -63,7 +63,7 @@ def finetune(args):
     
     train_set = ECGDataset(
         path_to_dataset_csv=args.path_to_dataset_csv_train,
-        ecg_dir_path="/path/to/raw/train/ecgs",
+        ecg_dir_path=args.ecg_dir_path_train,
         label_start_index=args.label_start_index,
         downsampling_factor=args.downsampling_factor,
         pretrain=False,
@@ -74,7 +74,7 @@ def finetune(args):
 
     val_set = ECGDataset(
         path_to_dataset_csv=args.path_to_dataset_csv_val,
-        ecg_dir_path="/path/to/raw/val/ecgs",
+        ecg_dir_path=args.ecg_dir_path_val,
         label_start_index=args.label_start_index,
         downsampling_factor=args.downsampling_factor,
         pretrain=False,
@@ -582,6 +582,20 @@ if __name__ == "__main__":
     parser.add_argument(
         "path_to_dataset_csv_val",
         help="Path to the csv file containing the validation dataset",
+        type=str
+    )
+
+    #ecg_dir_path_train
+    parser.add_argument(
+        "ecg_dir_path_train",
+        help="Path to the dir that contains raw ecgs for training",
+        type=str
+    )
+
+    #ecg_dir_path_val
+    parser.add_argument(
+        "ecg_dir_path_val",
+        help="Path to the dir that contains raw ecgs for validation",
         type=str
     )
     
