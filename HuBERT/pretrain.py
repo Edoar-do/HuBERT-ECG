@@ -211,7 +211,7 @@ def train(args):
     
     train_set = ECGDataset(
         path_to_dataset_csv=args.path_to_dataset_csv_train,
-        ecg_dir_path="/data/ECG_AF/train_self_supervised",
+        ecg_dir_path=args.ecg_dir_path_train,
         downsampling_factor = args.downsampling_factor,
         features_path=args.train_features_path,
         kmeans_path = args.kmeans_path,
@@ -219,7 +219,7 @@ def train(args):
 
     val_set = ECGDataset(
         path_to_dataset_csv=args.path_to_dataset_csv_val,
-        ecg_dir_path="/data/ECG_AF/val_self_supervised",
+        ecg_dir_path=args.ecg_dir_path_val,
         features_path=args.val_features_path,
         downsampling_factor = args.downsampling_factor,
         kmeans_path = args.kmeans_path,
@@ -456,7 +456,20 @@ if __name__ == "__main__":
         help="Path to the csv file containing the validation dataset",
         type=str
     )
-    
+
+    #ecg_dir_path_train
+    parser.add_argument(
+        "ecg_dir_path_train",
+        help="Path to the dir that contains raw ecgs for training",
+        type=str
+    )
+
+    #ecg_dir_path_val
+    parser.add_argument(
+        "ecg_dir_path_val",
+        help="Path to the dir that contains raw ecgs for validation",
+        type=str
+    )
     #training_steps
     parser.add_argument(
         "--training_steps",
