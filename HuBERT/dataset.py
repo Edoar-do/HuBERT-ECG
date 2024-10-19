@@ -76,7 +76,6 @@ class ECGDataset(Dataset):
             assert len(self.diagnoses_cols) > 0, "No labels found in the dataset"
             self.weights = self.compute_weights()
             
-        np.random.seed(42)
         
     def compute_weights(self):
         logger.info("Computing weights...")        
