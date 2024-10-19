@@ -32,6 +32,9 @@ def random_crop(ecg, crop_size=500):
     Note: crop_size should be 2500 / downsampling_factor
     
     '''
+    
+    np.random.seed(42)
+    
     batch_size = ecg.size(0)
     ecg = ecg.view(batch_size, 12, -1)
     new_ecg = torch.zeros(batch_size, 12, crop_size).to(ecg.device)  
