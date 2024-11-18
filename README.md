@@ -1,7 +1,7 @@
 # HuBERT-ECG: A Self-Supervised Foundation Model for Broad and Scalable Cardiac Application
 
 [![medrXiv](https://img.shields.io/badge/medRxiv-green)](???)
-![GitHub License](https://img.shields.io/github/license/Edoar-do/HuBERT-ECG)
+License: CC BY-NC 4.0
 
 
 📢 [[Models](https://huggingface.co/Edoardo-BS/HuBERT-ECG/)] 
