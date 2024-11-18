@@ -18,7 +18,7 @@ All our models are accessible on Hugging Face [(https://huggingface.co/Edoardo-B
 ## 📚 Citation
 If you use our models or find our work useful, please consider citing us:
 ```
-???
+doi: https://doi.org/10.1101/2024.11.14.24317328
 ```
 
 
