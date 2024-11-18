@@ -187,14 +187,14 @@ def drop_nsr(df, perc):
     df = df.drop(to_drop)
     return df
 
-def simple_split(df, test_size, label_start_index = 3):
+def simple_split(df, test_size, random_state, label_start_index = 3):
     info = df.columns.values[:label_start_index]
     labels = df.columns.values[label_start_index:]
     
     X = df[info]
     y = df[labels]
     
-    msss = MultilabelStratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=42)
+    msss = MultilabelStratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
     
     for train_index, test_index in msss.split(X, y):
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
