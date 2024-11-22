@@ -13,7 +13,7 @@ Deep learning models have shown remarkable performance in electrocardiogram (ECG
 - [11/2024] This repository has been made public!
 
 ## Model weights
-All our models are accessible on Hugging Face [(https://huggingface.co/Edoardo-BS/HuBERT-ECG/)] under MIT license
+All our models are accessible on Hugging Face [(https://huggingface.co/Edoardo-BS/HuBERT-ECG/)] under CC BY-NC 4.0 license
 
 ## 📚 Citation
 If you use our models or find our work useful, please consider citing us:
