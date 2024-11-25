@@ -187,23 +187,32 @@ def drop_nsr(df, perc):
     df = df.drop(to_drop)
     return df
 
-def simple_split(df, test_size, random_state, label_start_index = 3):
+def simple_split(df, test_size, label_start_index = 3, random_state=None, n_splits=1):
     info = df.columns.values[:label_start_index]
     labels = df.columns.values[label_start_index:]
     
     X = df[info]
     y = df[labels]
     
-    msss = MultilabelStratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
+    msss = MultilabelStratifiedShuffleSplit(n_splits=n_splits, test_size=test_size, random_state=random_state)
+    
+    trains = []
+    tests = []
     
     for train_index, test_index in msss.split(X, y):
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
     
-    train = pd.concat([X_train, y_train], axis=1)      
-    test = pd.concat([X_test, y_test], axis=1)
-    
-    return train, test
+        train = pd.concat([X_train, y_train], axis=1)      
+        test = pd.concat([X_test, y_test], axis=1)
+        
+        trains.append(train)
+        tests.append(test)
+        
+    if n_splits == 1:
+        return trains[0], tests[0]
+    else:
+        return trains, tests
 
 def label_distribution(df, label_start=3, return_counts=False):
     labels = df.columns.values[label_start:]
