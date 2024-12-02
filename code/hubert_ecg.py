@@ -2,8 +2,6 @@ import torch
 import torch.nn as nn
 from transformers import HubertConfig, HubertModel
 from typing import List
-from hubert_ecg_classification import HuBERTForECGClassification as HuBERTClassification
-    
 
 class HuBERTECGConfig(HubertConfig):
     
