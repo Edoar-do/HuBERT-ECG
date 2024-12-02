@@ -133,8 +133,10 @@ def finetune(args):
         config = checkpoint['model_config']
 
         pretrained_hubert = HuBERT(config)
+
+        assert args.vocab_size == checkpoint['finetuning_vocab_size'], "Vocab size mismatch between passed args and what found in checkpoint"
         
-        hubert = HuBERTClassification(pretrained_hubert, num_labels=args.vocab_size, classifier_hidden_size=args.classifier_hidden_size, use_label_embedding=args.use_label_embedding)
+        hubert = HuBERTClassification(pretrained_hubert, num_labels=checkpoint['finetuning_vocab_size'], classifier_hidden_size=args.classifier_hidden_size, use_label_embedding=args.use_label_embedding)
         hubert.to(device)
         
         hubert.load_state_dict(checkpoint['model_state_dict'], strict=False) # strict false prevents errors when trying to match mask token key
