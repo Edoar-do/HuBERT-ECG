@@ -95,8 +95,7 @@ def train(args):
         logger.info(f"Loading checkpoint {hubert_name} to resume pretraining")
         
         checkpoint = torch.load(args.load_path, map_location = torch.device('cpu'))
-        vocab_sizes = checkpoint['pretraining_vocab_sizes']
-        config = HuBERTECGConfig(ensemble_length=len(vocab_sizes), vocab_sizes=vocab_sizes, **checkpoint['model_config'].to_dict())
+        config = HuBERTECGConfig(**checkpoint['model_config'].to_dict())
        
         hubert = HuBERT(config)
         hubert.load_state_dict(checkpoint['model_state_dict'])
