@@ -24,6 +24,8 @@ class ActivationFunction(nn.Module):
         return self.act(x)
 
 class HuBERTForECGClassification(nn.Module):
+
+    config_class = HuBERTECGConfig
     def __init__(
         self,
         hubert_ecg : HuBERTECG,
