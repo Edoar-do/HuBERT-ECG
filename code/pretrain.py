@@ -6,8 +6,8 @@ from torch.utils.data import DataLoader
 from loguru import logger
 import argparse
 from tqdm import tqdm
-from hubert_ecg import HuBERTECG as HuBERT
-from transformers import HubertConfig, get_linear_schedule_with_warmup
+from hubert_ecg import HuBERTECG as HuBERT, HuBERTECGConfig
+from transformers import get_linear_schedule_with_warmup
 import torch.optim as optim
 import wandb
 import numpy as np
@@ -16,13 +16,13 @@ from math import ceil
 from dataset import ECGDataset
 import os
 import random
-from transformers.models.hubert.modeling_hubert import _compute_mask_indices
+from transformers.models.hubert.modeling_hubert import compute_mask_indices
 
 EPS = 1E-09
 MINIMAL_IMPROVEMENT = 1e-3
 DROPOUT_DYNAMIC_REG_FACTOR = 0.05
 
-SELF_SUPERVISED_MODEL_CKPT_PATH = "/path/to/folder/for/ssl/models"
+SELF_SUPERVISED_MODEL_CKPT_PATH = "/data/ECG_AF/ECG_pretraining/models/checkpoints/self-supervised/"
 
 def dynamic_regularizer(optimizer, model, penalty):
     if penalty:
@@ -45,7 +45,7 @@ def train(args):
     device = torch.device('cuda')
     
     ### NOTE: comment for sweeps, uncomment for normal run ###
-    wandb.init(entity="your-entity", project="your-project", group="your-group)
+    wandb.init(entity="cardi-ai", project="ECG-pretraining", group="self-supervised")
 
     if args.wandb_run_name is not None:
         wandb.run.name = args.wandb_run_name
@@ -96,7 +96,9 @@ def train(args):
         
         checkpoint = torch.load(args.load_path, map_location = torch.device('cpu'))
         vocab_sizes = checkpoint['pretraining_vocab_sizes']
-        hubert = HuBERT(checkpoint['model_config'], ensemble_length=1 if type(vocab_sizes) == int else len(vocab_sizes), vocab_sizes=[vocab_sizes] if type(vocab_sizes) != list else vocab_sizes)
+        config = HuBERTECGConfig(ensemble_length=len(vocab_sizes), vocab_sizes=vocab_sizes, **checkpoint['model_config'].to_dict())
+       
+        hubert = HuBERT(config)
         hubert.load_state_dict(checkpoint['model_state_dict'])
 
         previous_iteration = int(hubert_name.split('_')[1])
@@ -166,7 +168,9 @@ def train(args):
             raise ValueError(f"Downsampling factor {args.downsampling_factor} not supported")           
             
                 
-        config = HubertConfig(
+        config = HuBERTECGConfig(
+            ensemble_length=len(args.vocab_sizes),
+            vocab_sizes=args.vocab_sizes,
             hidden_size = hidden_size,
             num_hidden_layers = num_hidden_layers,
             num_attention_heads = num_attention_heads,
@@ -185,7 +189,7 @@ def train(args):
             final_dropout=0.1 + DROPOUT_DYNAMIC_REG_FACTOR * args.model_dropout_mult,    
         ) # + other default params
         
-        hubert = HuBERT(config, ensemble_length = len(args.vocab_sizes), vocab_sizes = args.vocab_sizes)
+        hubert = HuBERT(config)
         # hubert = nn.DataParallel(hubert)
         hubert.to(device)
         global_step = 0
@@ -212,7 +216,7 @@ def train(args):
     
     train_set = ECGDataset(
         path_to_dataset_csv=args.path_to_dataset_csv_train,
-        ecg_dir_path=args.ecg_dir_path_train,
+        ecg_dir_path="/data/ECG_AF/train_self_supervised",
         downsampling_factor = args.downsampling_factor,
         features_path=args.train_features_path,
         kmeans_path = args.kmeans_path,
@@ -220,7 +224,7 @@ def train(args):
 
     val_set = ECGDataset(
         path_to_dataset_csv=args.path_to_dataset_csv_val,
-        ecg_dir_path=args.ecg_dir_path_val,
+        ecg_dir_path="/data/ECG_AF/val_self_supervised",
         features_path=args.val_features_path,
         downsampling_factor = args.downsampling_factor,
         kmeans_path = args.kmeans_path,
@@ -264,12 +268,14 @@ def train(args):
 
             global_step += 1
             
-            ecg = ecg.to(device) 
-            attention_mask = attention_mask.to(device) 
-            ensamble_labels = ensamble_labels.to(device) 
+            ecg = ecg.to(device) #(BS, 12*2500)
+            attention_mask = attention_mask.to(device) #(BS, 12*2500)
+            ensamble_labels = ensamble_labels.to(device) #(BS, ensamble_length, F)
+            
+            #logger.info("Mapped data to device")
 
             with amp.autocast():
-
+                
                 mask = compute_mask_indices(
                     (ecg.size(0), ecg.size(1)), 
                     mask_prob=config.mask_time_prob, 
@@ -278,9 +284,12 @@ def train(args):
                     min_masks=config.mask_time_min_masks)
                
                 out_encoder_dict = hubert(ecg, attention_mask=attention_mask, mask_time_indices=mask, output_attentions=False, output_hidden_states=False, return_dict=True)
+                #logger.info("Computed encodings")
                 
                 ensamble_logits = hubert.logits(out_encoder_dict['last_hidden_state']) #[(BS, F, V)] * ensamble_length
-                
+                #logger.info("Computed logits")
+                                
+                # modify loss computation to enable ensamble loss (sum of losses)                
                 ensamble_labels = ensamble_labels.transpose(0, 1) # (ensamble_length, BS, F)
                 
                 masked_loss = 0
@@ -292,12 +301,18 @@ def train(args):
                     # labels is (BS, F), logits is (BS, F, V)
                     masked_loss += F.cross_entropy(logits[mask], labels[mask])
                     unmasked_loss += F.cross_entropy(logits[~mask], labels[~mask])
+                    #logger.info("Computed masked and unmasked losses per task")
                     
                 loss = args.alpha * masked_loss +  (1 - args.alpha) * unmasked_loss
                 loss = loss / accumulation_steps
                        
             scaler.scale(loss).backward()
             train_losses.append(loss.item())
+            
+            #logger.info("Accumulated scaled loss")
+                        
+            # scaler.unscale_(optimizer)
+            # torch.nn.utils.clip_grad_norm_(hubert.parameters(), 10.)
             
             ### GRADIENT ACCUMULATION ###
             
@@ -462,20 +477,7 @@ if __name__ == "__main__":
         help="Path to the csv file containing the validation dataset",
         type=str
     )
-
-    #ecg_dir_path_train
-    parser.add_argument(
-        "ecg_dir_path_train",
-        help="Path to the dir that contains raw ecgs for training",
-        type=str
-    )
-
-    #ecg_dir_path_val
-    parser.add_argument(
-        "ecg_dir_path_val",
-        help="Path to the dir that contains raw ecgs for validation",
-        type=str
-    )
+    
     #training_steps
     parser.add_argument(
         "--training_steps",
@@ -692,7 +694,7 @@ if __name__ == "__main__":
     
     ### NOTE: this is to test sweeps ###
 
-    # wandb.init(entity="your-entity", project="your-project", group=("your-group"))
+    # wandb.init(entity="cardi-ai", project="ECG-pretraining", group=("self-supervised"))
     
     # args = wandb.config
 
