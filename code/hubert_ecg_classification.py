@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from transformers.modeling_outputs import BaseModelOutput
 from typing import Optional, Tuple, Union
-from hubert_ecg import HuBERTECG
+from hubert_ecg import HuBERTECG, HuBERTECGConfig
 
 class ActivationFunction(nn.Module):
     def __init__(self, activation : str):
