@@ -5,8 +5,8 @@ from torch.utils.data import DataLoader
 from loguru import logger
 import argparse
 from tqdm import tqdm
-from hubert_ecg import HuBERTECG as HuBERT
-from transformers import HubertConfig, get_linear_schedule_with_warmup
+from hubert_ecg import HuBERTECG as HuBERT, HuBERTECGConfig
+from transformers import get_linear_schedule_with_warmup
 import torch.optim as optim
 import wandb
 import numpy as np
@@ -27,7 +27,7 @@ import random
 
 EPS = 1e-9
 MINIMAL_IMPROVEMENT = 1e-3
-SUPERVISED_MODEL_CKPT_PATH = "/path/to/folder/for/finetuned/models"
+SUPERVISED_MODEL_CKPT_PATH = "/data/ECG_AF/ECG_pretraining/models/checkpoints/supervised/"
 DROPOUT_DYNAMIC_REG_FACTOR = 0.05
     
 
@@ -51,7 +51,7 @@ def finetune(args):
     device = torch.device('cuda')
     
     ### NOTE: comment for sweeps, uncomment for normal run ###
-    wandb.init(entity="your-entity", project="your-project", group="your-group")
+    wandb.init(entity="cardi-ai", project="ECG-pretraining", group="supervised")
 
     if args.wandb_run_name is not None:
         wandb.run.name = args.wandb_run_name
@@ -63,7 +63,7 @@ def finetune(args):
     
     train_set = ECGDataset(
         path_to_dataset_csv=args.path_to_dataset_csv_train,
-        ecg_dir_path=args.ecg_dir_path_train,
+        ecg_dir_path="/data/ECG_AF/train_self_supervised",
         label_start_index=args.label_start_index,
         downsampling_factor=args.downsampling_factor,
         pretrain=False,
@@ -74,7 +74,7 @@ def finetune(args):
 
     val_set = ECGDataset(
         path_to_dataset_csv=args.path_to_dataset_csv_val,
-        ecg_dir_path=args.ecg_dir_path_val,
+        ecg_dir_path="/data/ECG_AF/val_self_supervised",
         label_start_index=args.label_start_index,
         downsampling_factor=args.downsampling_factor,
         pretrain=False,
@@ -130,11 +130,11 @@ def finetune(args):
         logger.info(f"Loading pretraining checkpoint {args.load_path.split('/')[-1]} to resume finetuning")
         
         checkpoint = torch.load(args.load_path, map_location = 'cpu')
-        config = checkpoint['model_config']
+        config = HuBERTECGConfig(**checkpoint['model_config'].to_dict())
 
         pretrained_hubert = HuBERT(config)
-
-        assert args.vocab_size == checkpoint['finetuning_vocab_size'], "Vocab size mismatch between passed args and what found in checkpoint"
+        
+        assert checkpoint['finetuning_vocab_size'] == args.vocab_size, "Vocab size mismatch"
         
         hubert = HuBERTClassification(pretrained_hubert, num_labels=checkpoint['finetuning_vocab_size'], classifier_hidden_size=args.classifier_hidden_size, use_label_embedding=args.use_label_embedding)
         hubert.to(device)
@@ -153,7 +153,7 @@ def finetune(args):
             hubert.set_transformer_blocks_trainable(n_blocks=args.transformer_blocks_to_unfreeze)
             hubert.set_feature_extractor_trainable(args.unfreeze_conv_embedder)
             
-        # if layer_wise_lr, then set a higher lr for deeper transformer layers + head than that of the rest of the trainable body of the model
+        # if layuer_wise_lr, then set a higher lr for deeper transformer layers + head than that of the rest of the trainable body of the model
         parameters_group = []    
         if args.layer_wise_lr and all(p.requires_grad for p in hubert.hubert_ecg.encoder.layers.parameters()):
             parameters_group.append({"params": hubert.hubert_ecg.feature_projection.parameters(), "lr": 1e-7})
@@ -222,7 +222,7 @@ def finetune(args):
         else:
             raise ValueError(f"Downsampling factor {args.downsampling_factor} not supported")
                 
-        config = HubertConfig(
+        config = HuBERTECGConfig(
             hidden_size = hidden_size,
             num_hidden_layers = num_hidden_layers,
             num_attention_heads = num_attention_heads,
@@ -241,10 +241,7 @@ def finetune(args):
             final_dropout=0.1 + DROPOUT_DYNAMIC_REG_FACTOR * args.model_dropout_mult,    
         ) # + other default params
         
-        hubert = HuBERT(config,
-                        ensamble_length=1 if type(args.vocab_size) == int else len(args.vocab_size),
-                        vocab_sizes=[args.vocab_size] if type(args.vocab_size) != list else args.vocab_size
-                        )
+        hubert = HuBERT(config)
         
         hubert = HuBERTClassification(hubert,
                                       num_labels=args.vocab_size,
@@ -279,7 +276,7 @@ def finetune(args):
         logger.info(f"Loading pretraining checkpoint {args.load_path.split('/')[-1]} to start finetuning")
                 
         checkpoint = torch.load(args.load_path, map_location = 'cpu')
-        config = checkpoint['model_config']
+        config = HuBERTECGConfig(**checkpoint['model_config'].to_dict())
         config.layerdrop = args.finetuning_layerdrop
 
         pretrained_hubert = HuBERT(config)
@@ -469,19 +466,19 @@ def finetune(args):
                     
                 # compute metrics on whole validation set and log them
                 # such metrics are vectors num_labels long containing the metric for each label
-                macros = []
                 for name, metric in metrics.items():
                     score = metric.compute()
                     macro = score.mean()
-                    macros.append(macro)
                     logger.info(f"Validation {name} = {score}, macro: {macro}")
+                    wandb.log({f"Validation_{name}": macro})
                     if name == args.target_metric:
                         target_score = macro
-
-                dict_to_log = {f"Validation_{name}": macro for name, macro in zip(metrics.keys(), macros)})
-                dict_to_log["Training_loss"] = train_loss
-                dict_to_log["Validation_loss"] = val_loss
-                wandb.log(dict_to_log)
+                
+                # log losses
+                wandb.log({
+                    "Training_loss": train_loss,
+                    "Validation_loss": val_loss,
+                    })
                     
                 hubert.train()
                 
@@ -584,20 +581,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "path_to_dataset_csv_val",
         help="Path to the csv file containing the validation dataset",
-        type=str
-    )
-
-    #ecg_dir_path_train
-    parser.add_argument(
-        "ecg_dir_path_train",
-        help="Path to the dir that contains raw ecgs for training",
-        type=str
-    )
-
-    #ecg_dir_path_val
-    parser.add_argument(
-        "ecg_dir_path_val",
-        help="Path to the dir that contains raw ecgs for validation",
         type=str
     )
     
@@ -896,9 +879,8 @@ if __name__ == "__main__":
     
     ### NOTE: this is to test sweeps ###
 
-    # wandb.init(entity="your-entity", project="your-project", group="your-group")
+    # wandb.init(entity="cardi-ai", project="ECG-pretraining", group=("supervised"))
     
     # args = wandb.config
 
     finetune(args)  
-                
