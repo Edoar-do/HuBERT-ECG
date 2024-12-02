@@ -16,6 +16,7 @@ from math import ceil
 from dataset import ECGDataset
 import os
 import random
+from transformers.models.hubert.modeling_hubert import _compute_mask_indices
 
 EPS = 1E-09
 MINIMAL_IMPROVEMENT = 1e-3
@@ -95,7 +96,7 @@ def train(args):
         
         checkpoint = torch.load(args.load_path, map_location = torch.device('cpu'))
         vocab_sizes = checkpoint['pretraining_vocab_sizes']
-        hubert = HuBERT(checkpoint['model_config'], ensamble_length=1 if type(vocab_sizes) == int else len(vocab_sizes), vocab_sizes=[vocab_sizes] if type(vocab_sizes) != list else vocab_sizes)
+        hubert = HuBERT(checkpoint['model_config'], ensemble_length=1 if type(vocab_sizes) == int else len(vocab_sizes), vocab_sizes=[vocab_sizes] if type(vocab_sizes) != list else vocab_sizes)
         hubert.load_state_dict(checkpoint['model_state_dict'])
 
         previous_iteration = int(hubert_name.split('_')[1])
@@ -184,7 +185,7 @@ def train(args):
             final_dropout=0.1 + DROPOUT_DYNAMIC_REG_FACTOR * args.model_dropout_mult,    
         ) # + other default params
         
-        hubert = HuBERT(config, ensamble_length = len(args.vocab_sizes), vocab_sizes = args.vocab_sizes)
+        hubert = HuBERT(config, ensemble_length = len(args.vocab_sizes), vocab_sizes = args.vocab_sizes)
         # hubert = nn.DataParallel(hubert)
         hubert.to(device)
         global_step = 0
@@ -268,12 +269,17 @@ def train(args):
             ensamble_labels = ensamble_labels.to(device) 
 
             with amp.autocast():
+
+                mask = compute_mask_indices(
+                    (ecg.size(0), ecg.size(1)), 
+                    mask_prob=config.mask_time_prob, 
+                    mask_length=config.mask_time_length, 
+                    attention_mask=attention_mask, 
+                    min_masks=config.mask_time_min_masks)
                
-                out_encoder_dict = hubert(ecg, attention_mask=attention_mask, output_attentions=False, output_hidden_states=False, return_dict=True)
+                out_encoder_dict = hubert(ecg, attention_mask=attention_mask, mask_time_indices=mask, output_attentions=False, output_hidden_states=False, return_dict=True)
                 
                 ensamble_logits = hubert.logits(out_encoder_dict['last_hidden_state']) #[(BS, F, V)] * ensamble_length
-                
-                mask = out_encoder_dict['mask_time_indices']
                 
                 ensamble_labels = ensamble_labels.transpose(0, 1) # (ensamble_length, BS, F)
                 
