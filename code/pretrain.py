@@ -267,9 +267,9 @@ def train(args):
 
             global_step += 1
             
-            ecg = ecg.to(device) #(BS, 12*2500)
-            attention_mask = attention_mask.to(device) #(BS, 12*2500)
-            ensamble_labels = ensamble_labels.to(device) #(BS, ensamble_length, F)
+            ecg = ecg.to(device) 
+            attention_mask = attention_mask.to(device)
+            ensamble_labels = ensamble_labels.to(device)
             
             #logger.info("Mapped data to device")
 
@@ -285,11 +285,11 @@ def train(args):
                 out_encoder_dict = hubert(ecg, attention_mask=attention_mask, mask_time_indices=mask, output_attentions=False, output_hidden_states=False, return_dict=True)
                 #logger.info("Computed encodings")
                 
-                ensamble_logits = hubert.logits(out_encoder_dict['last_hidden_state']) #[(BS, F, V)] * ensamble_length
+                ensamble_logits = hubert.logits(out_encoder_dict['last_hidden_state'])
                 #logger.info("Computed logits")
                                 
                 # modify loss computation to enable ensamble loss (sum of losses)                
-                ensamble_labels = ensamble_labels.transpose(0, 1) # (ensamble_length, BS, F)
+                ensamble_labels = ensamble_labels.transpose(0, 1) 
                 
                 masked_loss = 0
                 unmasked_loss = 0
@@ -309,9 +309,6 @@ def train(args):
             train_losses.append(loss.item())
             
             #logger.info("Accumulated scaled loss")
-                        
-            # scaler.unscale_(optimizer)
-            # torch.nn.utils.clip_grad_norm_(hubert.parameters(), 10.)
             
             ### GRADIENT ACCUMULATION ###
             
