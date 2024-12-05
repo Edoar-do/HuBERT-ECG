@@ -36,8 +36,8 @@ class HuBERTForECGClassification(nn.Module):
         classifier_dropout_prob : float = 0.1):
         super(HuBERTForECGClassification, self).__init__()
         self.hubert_ecg = hubert_ecg
-        self.hubert_ecg.config.mask_time_prob = 0.0 # prevents masking
-        self.hubert_ecg.config.mask_feature_prob = 0.0 # prevents masking
+        self.hubert_ecg.config.mask_time_prob = 0.0 # as we load pre-trained models that used to mask inputs, resetting masking probs prevents masking
+        self.hubert_ecg.config.mask_feature_prob = 0.0 # as we load pre-trained models that used to mask inputs, resetting masking probs prevents masking
         
         self.num_labels = num_labels
         self.config = self.hubert_ecg.config
@@ -50,7 +50,7 @@ class HuBERTForECGClassification(nn.Module):
         del self.hubert_ecg.final_proj # not needed
         
         if use_label_embedding: # for classification only
-            self.label_embedding = nn.Embedding(num_labels, self.config.hidden_size) #! to restore
+            self.label_embedding = nn.Embedding(num_labels, self.config.hidden_size) 
         else:
             if classifier_hidden_size is None: # no hidden layer
                 self.classifier = nn.Linear(self.config.hidden_size, num_labels)
