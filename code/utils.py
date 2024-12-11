@@ -5,6 +5,10 @@ from iterstrat.ml_stratifiers import MultilabelStratifiedShuffleSplit
 from scipy.signal import resample
 from biosppy.signals.tools import filter_signal
 
+## fixed test sets were extracted in a randomly stratified manner using random_state=42
+## (train, val) or (train, test) pairs used in cross-validations were extrected using the following "splitting" functions changing seed at each fold to ensure split diversity
+            
+
 def multilabel_split(path_to_csv_file, test_size, val_size, fold='', random_state=None, label_start_index=3, save=False):
     '''
     Split a multilabel dataset into train, validation and test sets preserving the distribution of labels.
