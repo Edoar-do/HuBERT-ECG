@@ -20,7 +20,7 @@ All our models are accessible on Hugging Face [(https://huggingface.co/Edoardo-B
 
 ## Installation
 Clone this repository and install all the necessary dependecies written in the `requirements.txt` file with ```pip install -r requirements.txt```.
-Installation time takes approximately ???
+Installation time may take up to 1 minute
 
 ## Reproducibility
 In the `reproducibility` folder you can find all train, validation, and test splits we used in our work as .csv files. You simply have to follow the instructions in the `reproducibility/README.md` to reproduce our results.
