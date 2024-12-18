@@ -18,6 +18,11 @@ Deep learning models have shown remarkable performance in electrocardiogram (ECG
 ## Model weights
 All our models are accessible on Hugging Face [(https://huggingface.co/Edoardo-BS/HuBERT-ECG/)] under CC BY-NC 4.0 license
 
+## Reproducibility
+Install all the necessary dependecies written in the `requirements.txt` file with ```pip install -r requirements.txt```.
+In the `reproducibility` folder you can find all train, validation, and test splits we used in our work as .csv files. You simply have to follow the instructions in the reproducibility/README.md to reproduce our results.
+As an example, you can easily fine-tune and evaluate an instance of HuBERT-ECG on PTB-XL All dataset, as shown in .sh scripts `finetune.sh` and `test.sh`.
+
 ## 📚 Citation
 If you use our models or find our work useful, please consider citing us:
 ```
