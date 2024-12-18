@@ -51,7 +51,7 @@ def finetune(args):
     device = torch.device('cuda')
     
     ### NOTE: comment for sweeps, uncomment for normal run ###
-    wandb.init(entity="cardi-ai", project="ECG-pretraining", group="supervised")
+    wandb.init(entity="my-entity", project="my-project", group="supervised")
 
     if args.wandb_run_name is not None:
         wandb.run.name = args.wandb_run_name
