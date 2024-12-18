@@ -20,12 +20,12 @@ All our models are accessible on Hugging Face [(https://huggingface.co/Edoardo-B
 
 ## Installation
 Clone this repository and install all the necessary dependecies written in the `requirements.txt` file with ```pip install -r requirements.txt```.
-Installation time may take up to 1 minute
+Full installation time may take up to 1 minute.
 
 ## Reproducibility
 In the `reproducibility` folder you can find all train, validation, and test splits we used in our work as .csv files. You simply have to follow the instructions in the `reproducibility/README.md` to reproduce our results.
 As an example, you can easily fine-tune and evaluate an instance of HuBERT-ECG on PTB-XL All dataset, as shown in .sh scripts `finetune.sh` and `test.sh`.
-Prediction on a single instances takes ??? on an A100 GPU node.
+Prediction on a single instance may take up to 2 seconds on an A100 GPU node.
 
 ## 📚 Citation
 If you use our models or find our work useful, please consider citing us:
