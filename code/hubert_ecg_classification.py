@@ -25,7 +25,6 @@ class ActivationFunction(nn.Module):
 
 class HuBERTForECGClassification(nn.Module):
 
-    config_class = HuBERTECGConfig
     def __init__(
         self,
         hubert_ecg : HuBERTECG,
