@@ -25,7 +25,7 @@ Full installation time may take up to 1 minute.
 ## Reproducibility
 In the `reproducibility` folder you can find all train, validation, and test splits we used in our work as .csv files. You simply have to follow the instructions in the `reproducibility/README.md` to reproduce our results.
 As an example, you can easily fine-tune and evaluate an instance of HuBERT-ECG on PTB-XL All dataset, as shown in .sh scripts `finetune.sh` and `test.sh`.
-Prediction on a single instance may take up to 2 seconds on an A100 GPU node.
+Prediction on a single instance takes less than 1 second on an A100 GPU node.
 
 ## 📚 Citation
 If you use our models or find our work useful, please consider citing us:
