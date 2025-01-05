@@ -16,8 +16,8 @@ from torchmetrics.classification import MulticlassRecall, MulticlassSpecificity
 from torcheval.metrics import MultilabelAUPRC as AUPRC
 from torcheval.metrics import MulticlassAUROC, MulticlassAccuracy, MulticlassAUPRC
 from typing import Iterable
-from hubert_ecg import HuBERTECG as HuBERT
-from hubert_ecg_classification import HuBERTForECGClassification as HuBERTClassification
+from hubert_ecg import HuBERTECG, HuBERTECGConfig
+from hubert_ecg_classification import HuBERTForECGClassification
 from metrics import CinC2020
 
 
@@ -176,11 +176,7 @@ if __name__ == "__main__":
     
     parser.add_argument("--task", type=str, default='multi_label', choices=['multi_label', 'multi_class', 'regression'], help="Task type")
     
-    args = parser.parse_args()
-    
-    
-
-    
+    args = parser.parse_args()    
         
     # LOADING FINETUNED MODEL FOR INFERENCE
         
@@ -190,24 +186,16 @@ if __name__ == "__main__":
     
     checkpoint = torch.load(args.model_path, map_location = cpu_device)
     
-    config = checkpoint["model_config"]
+    config = HuBERTECGConfig(**checkpoint['model_config'].to_dict())
 
-    pretrained_hubert = HuBERT(config)
+    pretrained_hubert = HuBERTECG(config)
 
-    keys = list(checkpoint['model_state_dict'].keys())    
-    num_labels = checkpoint['finetuning_vocab_size']
+    keys = checkpoint['model_state_dict'].keys()
 
-    if checkpoint['linear']:
-        classifier_hidden_size = None
-    elif checkpoint['use_label_embedding']:
-        classifier_hidden_size = None
-    else:
-        classifier_hidden_size = checkpoint['model_state_dict'][keys[-2]].size(-1)
-        
-    hubert = HuBERTClassification(
+    hubert = HuBERTForECGClassification(
         pretrained_hubert,
-        num_labels=num_labels,
-        classifier_hidden_size=classifier_hidden_size,
+        num_labels=checkpoint['finetuning_vocab_size'],
+        classifier_hidden_size=None if checkpoint['linear'] or checkpoint['use_label_embedding'] else checkpoint['model_state_dict'][keys[-2]].size(-1),
         use_label_embedding=checkpoint['use_label_embedding'])
     
     hubert.load_state_dict(checkpoint['model_state_dict'], strict=False) # strict false prevents errors when trying to match mask token key
