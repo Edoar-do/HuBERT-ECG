@@ -27,7 +27,7 @@ import random
 
 EPS = 1e-9
 MINIMAL_IMPROVEMENT = 1e-3
-SUPERVISED_MODEL_CKPT_PATH = "/data/ECG_AF/ECG_pretraining/models/checkpoints/supervised/"
+SUPERVISED_MODEL_CKPT_PATH = "/models/checkpoints/supervised/"
 DROPOUT_DYNAMIC_REG_FACTOR = 0.05
     
 
