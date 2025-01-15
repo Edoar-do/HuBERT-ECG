@@ -112,9 +112,10 @@ class ECGDataset(Dataset):
             start = np.random.randint(0, ecg_data.shape[1] - SAMPLES_IN_5_SECONDS_AT_500HZ + 1)
             ecg_data = ecg_data[:, start:start+SAMPLES_IN_5_SECONDS_AT_500HZ]
         elif self.return_full_length:
-            # returns a random 10-sec crop since 10 sec is the maximum length found in literature
+            # returns a random 10-sec crop since 10 sec is the most common length found in literature and is sufficiently long
+            # NOTE: we can't load the entire length (up to 30mins) of an ECG because ECGs from different datasets may have different durations and therefore be unstackable/unbatchable
             # NOTE: HuBERT-ECG is not designed to handle 10-sec ECGs but 5-sec recordings -> the returned ECG must be cropped to 5-sec once returned
-            # strategy used for TTA
+            # We use this strategy for TTA
             start = np.random.randint(0, ecg_data.shape[1] - SAMPLES_IN_10_SECONDS_AT_500HZ + 1)
             ecg_data = ecg_data[:, start:start+SAMPLES_IN_10_SECONDS_AT_500HZ]
         else:
