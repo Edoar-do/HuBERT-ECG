@@ -162,7 +162,7 @@ def dump_ecg_features(record, in_dir, dest_dir, mfcc_only, time_freq, device, sa
     else:
         logger.info(f"Skipping {filename} because features already exist")
 
-def dump_latent_features(path_to_dataset_csv, in_dir, dest_dir, start_perc, end_perc, hubert, output_layer, iteration, batch_size):
+def dump_latent_features(path_to_dataset_csv, in_dir, dest_dir, start_perc, end_perc, hubert, output_layer, iteration, batch_size, save_csv):
     '''
     Saves on disk computed latent representation once extracted from `hubert`'s `output_layer`.
     Args:
@@ -175,6 +175,7 @@ def dump_latent_features(path_to_dataset_csv, in_dir, dest_dir, start_perc, end_
     - output_layer: the encoding layer from which latents are to be extracted
     - iteration: iteration id used when saving the csv file referencing the saved representations
     - batch_size: the batch_size to use when feeding ECGs into hubert. 
+    - save_csv: whether to save a csv file referencing dumped features.
     '''
         
     data_set = ECGDataset(
@@ -188,7 +189,7 @@ def dump_latent_features(path_to_dataset_csv, in_dir, dest_dir, start_perc, end_
     # cutting dataframe to the desired percentage
     data_set.ecg_dataframe = data_set.ecg_dataframe.iloc[int(start_perc * len(data_set)) : int(end_perc * len(data_set))+1]
 
-    if args.save_csv_for_dumped_features:
+    if save_csv:
         data_set.ecg_dataframe.to_csv(f"latent_{int((end_perc-start_perc)*100)}_perc_encoder_{output_layer+1}_it{iteration}.csv", index=False)
         logger.info("Saved csv file containing references to dumped latents")
     
@@ -248,14 +249,13 @@ def main(args):
     else:
         logger.info("Loading HuBERT model to get latent features from...")
         checkpoint = torch.load(args.hubert_path, map_location='cpu')
-        config = HuBERTECGConfig(**checkpoint['model_config'].to_dict())
-        hubert = HuBERTECG(config, ensamble_length=1, vocab_sizes=[args.pretraining_vocab_size])
+        hubert = HuBERTECG(checkpoint['model_config'])
         hubert.load_state_dict(checkpoint['model_state_dict'], strict=False)
         hubert = hubert.to(device)
         hubert.eval()
         #dataframe.apply(dump_ecg_features_from_hubert, axis=1, args=(args.in_dir, hubert, 5, args.dest_dir, ))
         logger.info(f"Dumping latent features from {args.output_layer + 1}th layer of HuBERT's encoder...")
-        dump_latent_features(args.dataframe_path, args.in_dir, args.dest_dir, args.start_perc, args.end_perc, hubert, args.output_layer, args.train_iteration, batch_size=args.batch_size)
+        dump_latent_features(args.dataframe_path, args.in_dir, args.dest_dir, args.start_perc, args.end_perc, hubert, args.output_layer, args.train_iteration, batch_size=args.batch_size, save_csv=save_csv_for_dumped_features)
     
     logger.info("Features dumped.")
 
@@ -339,12 +339,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output_layer",
         help="[OPT.] Output layer of HuBERT encoder from which take the latent features. Used only when train_iteration > 1",
-        type=int
-    )
-    
-    parser.add_argument(
-        "--pretraining_vocab_size",
-        help="[OPT.] The vocabulary size of the pretraining task. Used only when train_iteration > 1",
         type=int
     )
     
