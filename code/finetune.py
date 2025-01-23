@@ -130,9 +130,8 @@ def finetune(args):
         logger.info(f"Loading pretraining checkpoint {args.load_path.split('/')[-1]} to resume finetuning")
         
         checkpoint = torch.load(args.load_path, map_location = 'cpu')
-        config = HuBERTECGConfig(checkpoint['model_config'])
 
-        pretrained_hubert = HuBERT(config)
+        pretrained_hubert = HuBERT(checkpoint['model_config'])
         
         assert checkpoint['finetuning_vocab_size'] == args.vocab_size, "Vocab size mismatch"
         assert checkpoint['use_label_embedding'] == args.use_label_embedding, "Label embedding mismatch"
@@ -278,7 +277,7 @@ def finetune(args):
         logger.info(f"Loading pretraining checkpoint {args.load_path.split('/')[-1]} to start finetuning")
                 
         checkpoint = torch.load(args.load_path, map_location = 'cpu')
-        config = HuBERTECGConfig(checkpoint['model_config'])
+        config = checkpoint['model_config']
         config.layerdrop = args.finetuning_layerdrop
 
         pretrained_hubert = HuBERT(config)
