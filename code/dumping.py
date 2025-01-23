@@ -10,7 +10,7 @@ from loguru import logger
 import random
 import argparse
 import torch
-from hubert_ecg import HuBERTECG
+from hubert_ecg import HuBERTECG, HuBERTECGConfig
 from tqdm import tqdm
 import torchaudio
 from scipy import signal
@@ -248,7 +248,8 @@ def main(args):
     else:
         logger.info("Loading HuBERT model to get latent features from...")
         checkpoint = torch.load(args.hubert_path, map_location='cpu')
-        hubert = HuBERTECG(checkpoint['model_config'], ensamble_length=1, vocab_sizes=[args.pretraining_vocab_size])
+        config = HuBERTECGConfig(**checkpoint['model_config'].to_dict())
+        hubert = HuBERTECG(config, ensamble_length=1, vocab_sizes=[args.pretraining_vocab_size])
         hubert.load_state_dict(checkpoint['model_state_dict'], strict=False)
         hubert = hubert.to(device)
         hubert.eval()
