@@ -189,7 +189,7 @@ def dump_latent_features(path_to_dataset_csv, in_dir, dest_dir, start_perc, end_
     data_set.ecg_dataframe = data_set.ecg_dataframe.iloc[int(start_perc * len(data_set)) : int(end_perc * len(data_set))+1]
 
     if args.save_csv_for_dumped_features:
-        data_set.ecg_dataframe.to_csv(f"/data/ECG_AF/latent_{int((end_perc-start_perc)*100)}_perc_encoder_{output_layer+1}_it{iteration}.csv", index=False)
+        data_set.ecg_dataframe.to_csv(f"latent_{int((end_perc-start_perc)*100)}_perc_encoder_{output_layer+1}_it{iteration}.csv", index=False)
         logger.info("Saved csv file containing references to dumped latents")
     
     dataloader = DataLoader(
