@@ -130,13 +130,15 @@ def finetune(args):
         logger.info(f"Loading pretraining checkpoint {args.load_path.split('/')[-1]} to resume finetuning")
         
         checkpoint = torch.load(args.load_path, map_location = 'cpu')
-        config = HuBERTECGConfig(**checkpoint['model_config'].to_dict())
+        config = HuBERTECGConfig(checkpoint['model_config'])
 
         pretrained_hubert = HuBERT(config)
         
         assert checkpoint['finetuning_vocab_size'] == args.vocab_size, "Vocab size mismatch"
+        assert checkpoint['use_label_embedding'] == args.use_label_embedding, "Label embedding mismatch"
+        assert checkpoint['linear'] == True if args.classifier_hidden_size is None and not args.use_label_embedding else False, "Classifier mismatch"
         
-        hubert = HuBERTClassification(pretrained_hubert, num_labels=checkpoint['finetuning_vocab_size'], classifier_hidden_size=args.classifier_hidden_size, use_label_embedding=args.use_label_embedding)
+        hubert = HuBERTClassification(pretrained_hubert, num_labels=args.finetuning_vocab_size, classifier_hidden_size=args.classifier_hidden_size, use_label_embedding=args.use_label_embedding)
         hubert.to(device)
         
         hubert.load_state_dict(checkpoint['model_state_dict'], strict=False) # strict false prevents errors when trying to match mask token key
@@ -276,7 +278,7 @@ def finetune(args):
         logger.info(f"Loading pretraining checkpoint {args.load_path.split('/')[-1]} to start finetuning")
                 
         checkpoint = torch.load(args.load_path, map_location = 'cpu')
-        config = HuBERTECGConfig(**checkpoint['model_config'].to_dict())
+        config = HuBERTECGConfig(checkpoint['model_config'])
         config.layerdrop = args.finetuning_layerdrop
 
         pretrained_hubert = HuBERT(config)
