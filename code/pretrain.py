@@ -273,16 +273,11 @@ def train(args):
             #logger.info("Mapped data to device")
 
             with amp.autocast():
-                
-                mask = compute_mask_indices(
-                    (ecg.size(0), ecg.size(1)), 
-                    mask_prob=config.mask_time_prob, 
-                    mask_length=config.mask_time_length, 
-                    attention_mask=attention_mask, 
-                    min_masks=config.mask_time_min_masks)
                
-                out_encoder_dict = hubert(ecg, attention_mask=attention_mask, mask_time_indices=mask, output_attentions=False, output_hidden_states=False, return_dict=True)
+                out_encoder_dict = hubert(ecg, attention_mask=attention_mask, output_attentions=False, output_hidden_states=False, return_dict=True)
                 #logger.info("Computed encodings")
+
+                mask = out_encoder_dict['mask_time_indices']
                 
                 ensamble_logits = hubert.logits(out_encoder_dict['last_hidden_state'])
                 #logger.info("Computed logits")
