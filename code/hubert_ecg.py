@@ -93,7 +93,7 @@ class HuBERTECG(HubertModel):
         
         return ensemble_logits # returns [(BS, T, V)] * ensemble_length
     
-def forward(
+    def forward(
         self,
         input_values: Optional[torch.Tensor],
         attention_mask: Optional[torch.Tensor] = None,
