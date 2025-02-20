@@ -20,25 +20,6 @@ from hubert_ecg import HuBERTECG, HuBERTECGConfig
 from hubert_ecg_classification import HuBERTForECGClassification
 from metrics import CinC2020
 
-def patchify(ecg, patch_size=500):
-    '''
-    Returns a list of patches from the input ECG signal obtained through a slinding window of half the patch_size
-    Each patch is tensor of shape BS, 12 * patch_size
-    in : BS, 12 * L
-    out : list of BS, 12 * patch_size
-    '''
-    bs = ecg.size(0)
-    ecg = ecg.view(bs, 12, -1)
-    patches = []
-    for i in range(0, ecg.size(-1) - patch_size, patch_size//2):
-        patch = ecg[:, :, i:i+patch_size]
-        assert patch.size(0) == bs and patch.size(1) == 12 and patch.size(2) == patch_size
-        patch = patch.reshape(bs, -1)
-        assert patch.size(0) == bs and patch.size(1) == 12 * patch_size
-        patches.append(patch)
-    return patches
-
-
 def random_crop(ecg, crop_size=500):
     '''
     Performs time-aligned random crop of the input ECG signals in the batch.
@@ -78,7 +59,6 @@ def test(args, model : nn.Module, metrics : Iterable[nn.Module]):
         return_full_length = args.tta,
         downsampling_factor=args.downsampling_factor,
         label_start_index=args.label_start_index,
-        always_same_shape=args.always_same_shape
     )
     
     dataloader = DataLoader(
@@ -113,14 +93,8 @@ def test(args, model : nn.Module, metrics : Iterable[nn.Module]):
         ecg = ecg.to(device) # BS x 12 * L
         labels = labels.squeeze().to(device)
         
-        if args.tta:
-            if args.patchify:
-                ecgs = patchify(ecg, patch_size=2500//args.downsampling_factor)
-            else:
-                ecgs = [random_crop(ecg, 2500//args.downsampling_factor) for _ in range(args.n_augs)]
-        else:
-            ecgs = [ecg]
-                
+
+        ecgs = [random_crop(ecg, 2500//args.downsampling_factor) for _ in range(args.n_augs)] if args.tta else [ecg]                
         
         probs = []
         for aug_ecg in ecgs: # iterate over augmented batches
@@ -166,9 +140,7 @@ def test(args, model : nn.Module, metrics : Iterable[nn.Module]):
         print(f"CinC2020 = {score}")
         with open("cinc2020.txt", 'a') as f:
             f.write(f"{args.save_id} : {score}\n")
-        
             
-        
     if args.save_id is not None:
         if args.tta_aggregation == 'max':
             performance.to_csv(f"./performance/performance_{args.save_id}_max.csv")
@@ -204,13 +176,9 @@ if __name__ == "__main__":
     
     parser.add_argument("--n_augs", type=int, default=3, help="Number of augmentations")
 
-    parser.add_argument("--patchify", default=False, action="store_true", help="Whether to use patchify for test-time augmentation instead a predefined number of crops")
-    
     parser.add_argument("--challenge_metric", default=False, action="store_true", help="Whether to compute CinC2020 metric")
     
     parser.add_argument("--task", type=str, default='multi_label', choices=['multi_label', 'multi_class', 'regression'], help="Task type")
-
-    parser.add_argument("--always_same_shape", default=False, action="store_true", help="Whether ECG signals in test set have always the same shape")
 
     parser.add_argument("--save_probs", default=False, action="store_true", help="Whether to save probs")
     
