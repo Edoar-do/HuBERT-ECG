@@ -186,7 +186,7 @@ if __name__ == "__main__":
     
     checkpoint = torch.load(args.model_path, map_location = cpu_device)
     
-    config = HuBERTECGConfig(**checkpoint['model_config'].to_dict())
+    config = checkpoint['model_config']
 
     pretrained_hubert = HuBERTECG(config)
 
