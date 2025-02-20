@@ -2,8 +2,148 @@ import pandas as pd
 import os
 import numpy as np
 from iterstrat.ml_stratifiers import MultilabelStratifiedShuffleSplit
-from scipy.signal import resample
-from biosppy.signals.tools import filter_signal
+import torch
+from torchmetrics.classification import MultilabelF1Score as F1_score
+from torchmetrics.classification import MultilabelRecall as Recall
+from torchmetrics.classification import MultilabelPrecision as Precision
+from torchmetrics.classification import MultilabelSpecificity as Specificity
+from torchmetrics.classification import MultilabelAUROC as AUROC
+from torchmetrics.classification import MulticlassRecall, MulticlassSpecificity
+from torcheval.metrics import MultilabelAUPRC as AUPRC
+from torcheval.metrics import MulticlassAUROC, MulticlassAccuracy, MulticlassAUPRC
+import argparse
+from sklearn.utils import resample
+
+def get_CI_intervals_by_bootstrapping(path_to_csv_test_set, label_start_index=3, N=1000, task='multi_label', average="none", alpha=0.95, path_to_performance=None):
+    """
+    Computes 95% confidence intervals for classification metrics using bias-corrected bootstrapping.
+    
+    Args:
+        path_to_csv_test_set (str): Path to the CSV file containing the test set.
+        label_start_index (int): Column index where labels start in the CSV file.
+        N (int): Number of bootstrap iterations.
+        task (str): Task type ('multi_label' or 'multi_class') used to find the right metrics.
+
+    Returns:
+        dict: Dictionary containing confidence intervals for each metric.
+
+    Ref: https://github.com/tmehari/ecg-selfsupervised/blob/main/clinical_ts/eval_utils_cafa.py 
+    """
+
+    np.random.seed(42)
+    torch.manual_seed(42)
+    
+    # Load dataset
+    df = pd.read_csv(path_to_csv_test_set)
+    num_labels = len(df.columns[label_start_index:])
+
+    # Load precomputed probability outputs
+    probs_dir = os.path.join(f"probs/{os.path.basename(path_to_csv_test_set)[:-4]}")
+    probs = [np.load(os.path.join(probs_dir, prob)) for prob in os.listdir(probs_dir) if prob.endswith(".npy")]
+    probs = np.vstack(probs)
+
+    print(f"Fetched soft predictions and stacked into a {probs.shape} tensor") 
+    print()
+
+    # Sanity checks
+    assert probs.shape == (len(df), num_labels), f"Mismatch in shape: expected ({len(df)}, {num_labels}), got {probs.shape}"
+
+    # Define metrics based on the task type
+    task2metric = {
+        'multi_label' : {
+            'test_f1_score' : F1_score(num_labels=num_labels, average=average), 
+            'test_recall' : Recall(num_labels=num_labels, average=average),
+            'test_precision' : Precision(num_labels=num_labels, average=average),
+            'test_specificity' : Specificity(num_labels=num_labels, average=average),
+            'test_auroc' : AUROC(num_labels=num_labels, average=average), 
+            'test_auprc' : AUPRC(num_labels=num_labels, average=average)
+                         },
+        
+        'multi_class' : {
+            'test_accuracy' : MulticlassAccuracy(num_classes=num_labels),
+            'test_auroc' : MulticlassAUROC(num_classes=num_labels),
+            'test_recall' : MulticlassRecall(num_classes=num_labels),
+            'test_specificity' : MulticlassSpecificity(num_classes=num_labels),
+            'test_auprc' : MulticlassAUPRC(num_classes=num_labels)
+                        },
+        
+        'regression' : {}
+                         
+    }
+
+    metrics = task2metric[task]
+
+    # Move metrics to GPU if available
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    for metric in metrics.values():
+        metric.to(device)
+
+
+    y_true = torch.tensor(df.iloc[:, label_start_index:].values, dtype=torch.long).to(device)
+    y_pred = torch.tensor(probs, dtype=torch.float32).to(device)
+
+    print("Converted to torch tensors", y_true.size(), y_pred.size())
+
+    assert y_true.size() == y_pred.size(), f"Size mismatch: y_true {y_true.size()}, y_pred {y_pred.size()}"
+
+    # point estimate
+    print("POINT ESTIMATES")
+
+    if path_to_performance is None:
+        point_estimate = {}
+        for metric_name, metric in metrics.items():
+            metric.reset()
+            metric.update(y_pred, y_true)
+            val = metric.compute().cpu().numpy()
+            print(f"{metric_name} : {val}")
+            point_estimate[metric_name] = val
+    else:
+        point_estimate = pd.read_csv(path_to_performance, index_col=0) # metrics name as index, labels as columns
+
+        if average != "none":
+            point_estimate = point_estimate.mean(axis=1).to_dict()
+        else:
+            point_estimate = point_estimate.to_dict(orient='index')
+
+
+    print()
+
+    # bootstrapping
+    bootstrapped_differences = {metric_name : [] for metric_name in metrics.keys()}
+    for i in range(N):
+        ids = resample(range(len(y_true)), n_samples=len(y_true), stratify=df.iloc[:, label_start_index:].values)
+        for metric_name, metric in metrics.items():
+            metric.reset()
+            metric.update(y_pred[ids], y_true[ids])
+            val = metric.compute().cpu().numpy() # numpy array of shape (num_classes,) if average is "none", else a scalar numpy array
+            bootstrapped_differences[metric_name].append(val - point_estimate[metric_name]) # list of N numpy arrays of shape (num_classes,) if average is "none", else a list of N scalar numpy arrays
+
+    CI_intervals = {}
+    lower_bound = ((1.0 - alpha) / 2.0) * 100
+    upper_bound = (alpha + ((1.0 - alpha) / 2.0)) * 100
+
+    for metric_name in metrics.keys():
+        diffs = np.array(bootstrapped_differences[metric_name]) # transforms list of differences into numpy array of differences
+
+        # Compute percentiles correctly based on whether we have class-wise metrics or single values
+        lower_percentile = np.percentile(diffs, lower_bound, axis=0 if average == "none" else None)
+        upper_percentile = np.percentile(diffs, upper_bound, axis=0 if average == "none" else None)
+
+        # Add the point estimate back
+        CI_intervals[metric_name] = (
+            point_estimate[metric_name] + lower_percentile,
+            point_estimate[metric_name] + upper_percentile
+        )
+
+    # Print results
+    print("\nConfidence Intervals:")
+    for metric_name, (lower, upper) in CI_intervals.items():
+        if average == "none":
+            print(f"{metric_name}:")
+            for i, (l, u) in enumerate(zip(lower, upper)):
+                print(f"  Class {i}: {l:.4f} - {u:.4f}")
+        else:
+            print(f"{metric_name}: {lower:.4f} - {upper:.4f}")
             
 
 def multilabel_split(path_to_csv_file, test_size, val_size, fold='', random_state=None, label_start_index=3, save=False):
