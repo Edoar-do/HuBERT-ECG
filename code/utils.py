@@ -14,6 +14,7 @@ from torcheval.metrics import MulticlassAUROC, MulticlassAccuracy, MulticlassAUP
 import argparse
 from sklearn.utils import resample
 
+
 def get_CI_intervals_by_bootstrapping(path_to_csv_test_set, label_start_index=3, N=1000, task='multi_label', average="none", alpha=0.95, path_to_performance=None):
     """
     Computes 95% confidence intervals for classification metrics using bias-corrected bootstrapping.
@@ -27,7 +28,8 @@ def get_CI_intervals_by_bootstrapping(path_to_csv_test_set, label_start_index=3,
     Returns:
         dict: Dictionary containing confidence intervals for each metric.
 
-    Ref: https://github.com/tmehari/ecg-selfsupervised/blob/main/clinical_ts/eval_utils_cafa.py 
+    Ref: https://ocw.mit.edu/courses/mathematics/18-05-introduction-to-probability-and-statistics-spring-2014/readings/MIT18_05S14_Reading24.pdf 
+    empirical bootstrap rather than bootstrap percentiles
     """
 
     np.random.seed(42)
@@ -39,7 +41,9 @@ def get_CI_intervals_by_bootstrapping(path_to_csv_test_set, label_start_index=3,
 
     # Load precomputed probability outputs
     probs_dir = os.path.join(f"probs/{os.path.basename(path_to_csv_test_set)[:-4]}")
-    probs = [np.load(os.path.join(probs_dir, prob)) for prob in os.listdir(probs_dir) if prob.endswith(".npy")]
+    probs = [os.path.join(probs_dir, prob) for prob in os.listdir(probs_dir) if prob.endswith(".npy")]
+    probs.sort(key=lambda x: os.path.getmtime(x))
+    probs = [np.load(prob) for prob in probs]
     probs = np.vstack(probs)
 
     print(f"Fetched soft predictions and stacked into a {probs.shape} tensor") 
