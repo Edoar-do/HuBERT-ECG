@@ -16,9 +16,12 @@ from torchmetrics.classification import MulticlassRecall, MulticlassSpecificity
 from torcheval.metrics import MultilabelAUPRC as AUPRC
 from torcheval.metrics import MulticlassAUROC, MulticlassAccuracy, MulticlassAUPRC
 from typing import Iterable
-from hubert_ecg import HuBERTECG, HuBERTECGConfig
-from hubert_ecg_classification import HuBERTForECGClassification
+from hubert_ecg import HuBERTECG as HuBERT
+from hubert_ecg import HuBERTECGConfig
+from hubert_ecg_classification import HuBERTForECGClassification as HuBERTClassification
 from metrics import CinC2020
+import os
+from transformers import HubertConfig
 
 def random_crop(ecg, crop_size=500):
     '''
@@ -30,7 +33,7 @@ def random_crop(ecg, crop_size=500):
     ---
     Note: crop_size should be 2500 / downsampling_factor
     
-    '''
+    '''    
     
     batch_size = ecg.size(0)
     ecg = ecg.view(batch_size, 12, -1)
@@ -54,19 +57,17 @@ def test(args, model : nn.Module, metrics : Iterable[nn.Module]):
         path_to_dataset_csv = args.path_to_dataset_csv,
         ecg_dir_path = args.ecg_dir_path,
         pretrain = False,
-        encode = False,
-        random_crop = False,
-        return_full_length = args.tta,
         downsampling_factor=args.downsampling_factor,
         label_start_index=args.label_start_index,
+        return_full_length=args.tta,
     )
     
     dataloader = DataLoader(
         testset,
         collate_fn=testset.collate,
-        num_workers=0,
+        num_workers=5,
         batch_size = args.batch_size,
-        shuffle=False,
+        shuffle=False, # don't touch if you wanne save probs
         sampler=None,
         pin_memory=True,
         drop_last=False
@@ -88,14 +89,14 @@ def test(args, model : nn.Module, metrics : Iterable[nn.Module]):
     
     ### TESTING LOOP ###
 
-    for ecg, _, labels in tqdm(dataloader, total=len(dataloader)):
+    for batch_id, (ecg, _, labels) in enumerate(tqdm(dataloader, total=len(dataloader))):
         
         ecg = ecg.to(device) # BS x 12 * L
         labels = labels.squeeze().to(device)
-        
 
-        ecgs = [random_crop(ecg, 2500//args.downsampling_factor) for _ in range(args.n_augs)] if args.tta else [ecg]                
-        
+
+        ecgs = [random_crop(ecg, 2500//args.downsampling_factor) for _ in range(args.n_augs)] if args.tta else [ecg] 
+                
         probs = []
         for aug_ecg in ecgs: # iterate over augmented batches
             # forward with a single augmented batch
@@ -111,6 +112,12 @@ def test(args, model : nn.Module, metrics : Iterable[nn.Module]):
         
         # average probs over augmented batches for tta
         probs = torch.stack(probs).mean(dim=0) if args.tta_aggregation == 'mean' else torch.stack(probs).max(dim=0).values
+
+        if args.save_probs:
+            dest_path = f"probs/{os.path.basename(args.path_to_dataset_csv)[:-4]}"
+            os.makedirs(dest_path, exist_ok=True) 
+            np.save(os.path.join(dest_path, f"probs_{batch_id}_bs{args.batch_size}"), probs.cpu().numpy()) # if no shuffle, then batch_id is the index of the batch in the dataset
+            logger.info(f"Probs saved at probs/{os.path.basename(args.path_to_dataset_csv)[:-4]}/probs_{batch_id}_bs{args.batch_size}.npy")
         
         if args.challenge_metric:
             preds = (probs > 0.5).float() # binary predictions
@@ -128,19 +135,14 @@ def test(args, model : nn.Module, metrics : Iterable[nn.Module]):
         score = metric.compute() # compute metric over all test set
         print(f"{name} = {score}, macro: {score.mean()}")
         performance.loc[name] = score.cpu().numpy() if args.task == 'multi_label' else score.mean().cpu().numpy()
-
-    if args.save_probs:
-        dest_path = f"probs/{os.path.basename(args.path_to_dataset_csv)[:-4]}"
-        os.makedirs(dest_path, exist_ok=True) 
-        np.save(os.path.join(dest_path, f"probs_{batch_id}_bs{args.batch_size}"), probs.cpu().numpy()) # if no shuffle, then batch_id is the index of the batch in the dataset
-        logger.info(f"Probs saved at probs/{os.path.basename(args.path_to_dataset_csv)[:-4]}/probs_{batch_id}_bs{args.batch_size}.npy")
         
     if args.challenge_metric and args.task == 'multi_label':
         score = cinc2020_metric.compute()
         print(f"CinC2020 = {score}")
         with open("cinc2020.txt", 'a') as f:
             f.write(f"{args.save_id} : {score}\n")
-            
+
+    os.makedirs("performance", exist_ok=True)        
     if args.save_id is not None:
         if args.tta_aggregation == 'max':
             performance.to_csv(f"./performance/performance_{args.save_id}_max.csv")
@@ -175,15 +177,16 @@ if __name__ == "__main__":
     parser.add_argument("--tta_aggregation", type=str, default='mean', choices=['mean', 'max'], help="Aggregation method for tta")
     
     parser.add_argument("--n_augs", type=int, default=3, help="Number of augmentations")
-
+    
     parser.add_argument("--challenge_metric", default=False, action="store_true", help="Whether to compute CinC2020 metric")
     
     parser.add_argument("--task", type=str, default='multi_label', choices=['multi_label', 'multi_class', 'regression'], help="Task type")
 
     parser.add_argument("--save_probs", default=False, action="store_true", help="Whether to save probs")
     
-    args = parser.parse_args()    
-        
+    args = parser.parse_args()
+
+    
     # LOADING FINETUNED MODEL FOR INFERENCE
         
     logger.info(f"Loading finetuned model from {args.model_path.split('/')[-1]}")
@@ -192,21 +195,48 @@ if __name__ == "__main__":
     
     checkpoint = torch.load(args.model_path, map_location = cpu_device)
     
-    config = checkpoint['model_config']
+    config = checkpoint["model_config"]
 
-    pretrained_hubert = HuBERTECG(config)
+    # this if is to ensure compatibility with models trained with the old version of the code where we had HubertConfig and not custom config as HuBERTECGConfig
+    if type(config) == HubertConfig:
+        config = HuBERTECGConfig(ensemble_length=1, vocab_sizes=[100], **config.to_dict())
 
-    keys = checkpoint['model_state_dict'].keys()
+    pretrained_hubert = HuBERT(config)
 
-    hubert = HuBERTForECGClassification(
+    keys = list(checkpoint['model_state_dict'].keys())    
+    num_labels = checkpoint['finetuning_vocab_size']
+
+    if checkpoint['linear']:
+        classifier_hidden_size = None
+    elif checkpoint['use_label_embedding']:
+        classifier_hidden_size = None
+    else:
+        classifier_hidden_size = checkpoint['model_state_dict'][keys[-2]].size(-1)
+        
+    hubert = HuBERTClassification(
         pretrained_hubert,
-        num_labels=checkpoint['finetuning_vocab_size'],
-        classifier_hidden_size=None if checkpoint['linear'] or checkpoint['use_label_embedding'] else checkpoint['model_state_dict'][keys[-2]].size(-1),
+        num_labels=num_labels,
+        classifier_hidden_size=classifier_hidden_size,
         use_label_embedding=checkpoint['use_label_embedding'])
     
-    hubert.load_state_dict(checkpoint['model_state_dict'], strict=False) # strict false prevents errors when trying to match mask token key
+    # In some transformers versions, "hubert_ecg.encoder.pos_conv_embed.conv.parametrizations.weight.original0", "hubert_ecg.encoder.pos_conv_embed.conv.parametrizations.weight.original1"
+    # have been moved to "hubert_ecg.encoder.pos_conv_embed.conv.weight_g", "hubert_ecg.encoder.pos_conv_embed.conv.weight_v". 
+    # The following snippet ensures the model state is loaded properly in case of version mismatch
+
+    model_state_dict = checkpoint['model_state_dict']
+    new_model_state_dict = {}
+    for k, v in model_state_dict.items():
+        if k.endswith("parametrizations.weight.original0"):
+            new_key = k.replace("parametrizations.weight.original0", "weight_g")
+        elif k.endswith("parametrizations.weight.original1"):
+            new_key = k.replace("parametrizations.weight.original1", "weight_v")
+        else:
+            new_key = k
+        new_model_state_dict[new_key] = v
     
-    logger.info(f"Loaded finetuned model")
+    hubert.load_state_dict(new_model_state_dict, strict=False) # strict false prevents missing mask_spec_embed, something not important at test time
+    
+    logger.info(f"Loaded finetuned model")    
     
     task2metric = {
         'multi_label' : {
