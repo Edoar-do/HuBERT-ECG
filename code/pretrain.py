@@ -17,6 +17,7 @@ from dataset import ECGDataset
 import os
 import random
 from transformers.models.hubert.modeling_hubert import compute_mask_indices
+from transformers import HubertConfig
 
 EPS = 1E-09
 MINIMAL_IMPROVEMENT = 1e-3
@@ -95,8 +96,13 @@ def train(args):
         logger.info(f"Loading checkpoint {hubert_name} to resume pretraining")
         
         checkpoint = torch.load(args.load_path, map_location = torch.device('cpu'))
+
+        config = checkpoint['model_config']
+        assert checkpoint['pretraining_vocab_sizes'] == args.vocab_sizes
+        if type(config) == HubertConfig:
+            config = HuBERTECGConfig(ensemble=len(checkpoint['pretraining_vocab_sizes']), vocab_sizes=checkpoint['pretraining_vocab_sizes'], **config.to_dict())
        
-        hubert = HuBERT(checkpoint['model_config'])
+        hubert = HuBERT(config)
         hubert.load_state_dict(checkpoint['model_state_dict'])
 
         previous_iteration = int(hubert_name.split('_')[1])
