@@ -24,6 +24,7 @@ from torchmetrics.classification import MulticlassAccuracy as Accuracy
 from torchmetrics.classification import MulticlassAUROC
 from torcheval.metrics import MultilabelAUPRC as AUPRC
 import random
+from transformers import HubertConfig
 
 EPS = 1e-9
 MINIMAL_IMPROVEMENT = 1e-3
@@ -131,7 +132,12 @@ def finetune(args):
         
         checkpoint = torch.load(args.load_path, map_location = 'cpu')
 
-        pretrained_hubert = HuBERT(checkpoint['model_config'])
+        config = checkpoint['model_config']
+
+        if type(config) == HubertConfig:
+            config = HuBERTECGConfig(**config.to_dict())
+            
+        pretrained_hubert = HuBERT(config)
         
         assert checkpoint['finetuning_vocab_size'] == args.vocab_size, "Vocab size mismatch"
         assert checkpoint['use_label_embedding'] == args.use_label_embedding, "Label embedding mismatch"
@@ -278,9 +284,12 @@ def finetune(args):
                 
         checkpoint = torch.load(args.load_path, map_location = 'cpu')
         config = checkpoint['model_config']
+        if type(config) == HubertConfig:
+            config = HuBERTECGConfig(**config.to_dict())
         config.layerdrop = args.finetuning_layerdrop
 
         pretrained_hubert = HuBERT(config)
+        hubert.hubert_ecg.load_state_dict(checkpoint['model_state_dict']) # load backbone weights
         
         # restore original p-dropout or set multipliers
         for name, module in pretrained_hubert.named_modules():
@@ -288,7 +297,6 @@ def finetune(args):
                 module.p = 0.1 + DROPOUT_DYNAMIC_REG_FACTOR * args.model_dropout_mult
         
         hubert = HuBERTClassification(pretrained_hubert, num_labels=args.vocab_size, classifier_hidden_size=args.classifier_hidden_size,  use_label_embedding=args.use_label_embedding)
-        hubert.hubert_ecg.load_state_dict(checkpoint['model_state_dict'], strict=False) # load backbone weights
         hubert.to(device)            
         
         
