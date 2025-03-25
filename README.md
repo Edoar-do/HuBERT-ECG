@@ -12,7 +12,7 @@ Deep learning models have shown remarkable performance in electrocardiogram (ECG
 ## News
 - [12/2024] Reproducibility has never been easier! Training, validation, and test splits ready to use in the reproducibility folder!
 - [12/2024] Pre-trained models are easily downloadable from Hugging Face using `AutoModel.from_pretrained`
-- [11/2024] Pre-trained models and models fine-tuned on Cardio-Learning are freely available on HuggingFace
+- [11/2024] Pre-trained models are freely available on HuggingFace
 - [11/2024] This repository has been made public!
 
 ## Model weights
