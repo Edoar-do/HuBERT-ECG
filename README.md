@@ -17,6 +17,7 @@ Deep learning models have shown remarkable performance in electrocardiogram (ECG
 
 ## Model weights
 All our models are accessible on Hugging Face [(https://huggingface.co/Edoardo-BS)] under CC BY-NC 4.0 license
+
 **Remember to pre-process your data before feeding HuBERT-ECG. Take a look at Data and Preprocessing section in the paper**
 
 ## Installation
