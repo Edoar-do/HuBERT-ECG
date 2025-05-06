@@ -1,6 +1,6 @@
 import torch
 from torch.nn import functional as F
-import torch.cuda.amp as amp
+import torch.amp as amp
 from torch.utils.data import DataLoader
 from loguru import logger
 import argparse
@@ -28,7 +28,7 @@ from transformers import HubertConfig
 
 EPS = 1e-9
 MINIMAL_IMPROVEMENT = 1e-3
-SUPERVISED_MODEL_CKPT_PATH = "/models/checkpoints/supervised/"
+SUPERVISED_MODEL_CKPT_PATH = "/proj/rep-learning-robotics/users/x_nonra/HuBERT-ECG/models"
 DROPOUT_DYNAMIC_REG_FACTOR = 0.05
     
 
@@ -52,7 +52,8 @@ def finetune(args):
     device = torch.device('cuda')
     
     ### NOTE: comment for sweeps, uncomment for normal run ###
-    wandb.init(entity="my-entity", project="my-project", group="supervised")
+    # wandb.init(entity="'nona-phd'", project="hubert")
+    wandb.init()
 
     if args.wandb_run_name is not None:
         wandb.run.name = args.wandb_run_name
@@ -64,7 +65,7 @@ def finetune(args):
     
     train_set = ECGDataset(
         path_to_dataset_csv=args.path_to_dataset_csv_train,
-        ecg_dir_path="/data/ECG_AF/train_self_supervised",
+        ecg_dir_path=args.data_path,
         label_start_index=args.label_start_index,
         downsampling_factor=args.downsampling_factor,
         pretrain=False,
@@ -75,7 +76,7 @@ def finetune(args):
 
     val_set = ECGDataset(
         path_to_dataset_csv=args.path_to_dataset_csv_val,
-        ecg_dir_path="/data/ECG_AF/val_self_supervised",
+        ecg_dir_path=args.data_path,
         label_start_index=args.label_start_index,
         downsampling_factor=args.downsampling_factor,
         pretrain=False,
@@ -289,7 +290,7 @@ def finetune(args):
         config.layerdrop = args.finetuning_layerdrop
 
         pretrained_hubert = HuBERT(config)
-        hubert.hubert_ecg.load_state_dict(checkpoint['model_state_dict']) # load backbone weights
+        # hubert.hubert_ecg.load_state_dict(checkpoint['model_state_dict']) # load backbone weights
         
         # restore original p-dropout or set multipliers
         for name, module in pretrained_hubert.named_modules():
@@ -297,7 +298,8 @@ def finetune(args):
                 module.p = 0.1 + DROPOUT_DYNAMIC_REG_FACTOR * args.model_dropout_mult
         
         hubert = HuBERTClassification(pretrained_hubert, num_labels=args.vocab_size, classifier_hidden_size=args.classifier_hidden_size,  use_label_embedding=args.use_label_embedding)
-        hubert.to(device)            
+        hubert.to(device) 
+        hubert.hubert_ecg.load_state_dict(checkpoint['model_state_dict'], strict=False) # load backbone weights           
         
         
         global_step = 0
@@ -397,7 +399,7 @@ def finetune(args):
             attention_mask = attention_mask.to(device)
             labels = labels.squeeze().to(device)
             
-            with amp.autocast():
+            with amp.autocast('cuda'):
                 logits, _ = hubert(ecg, attention_mask=attention_mask, output_attentions=False, output_hidden_states=False, return_dict=True)
                 loss = criterion_train(logits, labels)
                 
@@ -578,6 +580,14 @@ if __name__ == "__main__":
         type=int,
         choices=[1, 2, 3]
         )
+
+    # data_path
+    parser.add_argument(
+        "data_path",
+        help="Path to the directory containing the ECG data",
+        type=str,
+        default="/proj/rep-learning-robotics/users/x_nonra/HuBERT-ECG/data/ptb-xl"
+    )
     
     #path_to_dataset_csv_train
     parser.add_argument(

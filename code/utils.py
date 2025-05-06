@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import numpy as np
+import wfdb
 from iterstrat.ml_stratifiers import MultilabelStratifiedShuffleSplit
 import torch
 from torchmetrics.classification import MultilabelF1Score as F1_score
@@ -12,7 +13,10 @@ from torchmetrics.classification import MulticlassRecall, MulticlassSpecificity
 from torcheval.metrics import MultilabelAUPRC as AUPRC
 from torcheval.metrics import MulticlassAUROC, MulticlassAccuracy, MulticlassAUPRC
 import argparse
-from sklearn.utils import resample
+import re
+# from sklearn.utils import resample
+from scipy.signal import resample
+from scipy.signal import firwin, lfilter
 
 
 def get_CI_intervals_by_bootstrapping(path_to_csv_test_set, label_start_index=3, N=1000, task='multi_label', average="none", alpha=0.95, path_to_performance=None):
@@ -379,7 +383,7 @@ def apply_filter(signal, filter_bandwidth, fs=500):
                                 sampling_rate=fs)
     return signal
 
-def scaling(ecg_signal, smooth=1e-8):
+def scaling(seq, smooth=1e-8):
     return 2 * (seq - np.min(seq, axis=1)[None].T) / (np.max(seq, axis=1) - np.min(seq, axis=1) + smooth)[None].T - 1
 
 def ecg_preprocessing(ecg_signal, original_frequency, target_frequency=100, band_pass=[0.05, 47]):
@@ -392,3 +396,69 @@ def ecg_preprocessing(ecg_signal, original_frequency, target_frequency=100, band
     ecg_signal = apply_filter(ecg_signal, band_pass) # this band focuses on dominant component of ecg waves
 
     return scaling(ecg_signal)
+
+def save_to_npy(hea_path, record_name, output_dir):
+
+    # try:
+    match = re.match(r"(\d+)_hr", record_name)
+    print("recorde_name = ", record_name)
+    record = wfdb.rdrecord(os.path.join(hea_path, record_name))
+    fs = record.fs
+    signal = record.p_signal  # shape: (samples, leads)
+    signal = signal.T  # shape: (leads, samples)
+    processed = ecg_preprocessing(signal, original_frequency=fs, target_frequency=100, band_pass=[0.05, 47])
+    new_filename = f"HR{match.group(1)}.hea.npy"
+    np.save(os.path.join(output_dir, new_filename), processed)
+    # except Exception as e:
+    #     print(f"Error processing {record_base}: {e}")
+    return
+
+
+def prep_ptbxl_files(root_folder, output_folder):
+    os.makedirs(output_folder, exist_ok=True)
+
+    for subfolder in os.listdir(root_folder):
+        subfolder_path = os.path.join(root_folder, subfolder)
+        if not os.path.isdir(subfolder_path):
+            continue  # skip files at root level if any
+        for fname in os.listdir(subfolder_path):
+            if not fname.endswith("_hr.hea"):
+                continue
+            record_base = fname[:-4]  # strip .hea
+            save_to_npy(subfolder_path, record_base, output_folder)
+
+    return
+
+
+def filter_signal(signal, ftype='FIR', band='bandpass', order=101, frequency=[0.5, 45], sampling_rate=100):
+    """
+    Apply a bandpass filter to a multi-channel signal.
+
+    Parameters:
+        signal (np.ndarray): Input signal, shape (n_channels, n_samples)
+        ftype (str): Filter type ('FIR' supported)
+        band (str): Filter band ('bandpass' supported)
+        order (int): Filter order (number of taps for FIR)
+        frequency (list): Cutoff frequencies [low, high] in Hz
+        sampling_rate (float): Sampling rate in Hz
+
+    Returns:
+        filtered_signal (np.ndarray): Filtered signal
+        filter_coeffs (np.ndarray): Filter coefficients (for FIR)
+        extra (None): Placeholder for future use
+    """
+
+    if ftype == 'FIR' and band == 'bandpass':
+        # Normalize cutoff frequency to Nyquist frequency
+        nyq = 0.5 * sampling_rate
+        low = frequency[0] / nyq
+        high = frequency[1] / nyq
+        coeffs = firwin(order, [low, high], pass_zero=False)
+
+        # Apply filter to each channel
+        filtered_signal = lfilter(coeffs, 1.0, signal, axis=-1)
+
+        return filtered_signal, coeffs, None
+    else:
+        raise ValueError("Only FIR bandpass filtering is currently supported.")
+

@@ -20,6 +20,9 @@ The difference consists in projection & look-up embedding matrices present in th
 
 ## Pre-training
 `pretrain.py` contains the code to pre-train HuBERT-ECG in a self-supervised manner. `python pretrain.py --help` is highly suggested.
+```bash
+python code/pretrain.py 1 "/proj/rep-learning-robotics/users/x_nonra/HuBERT-ECG/data/ptb-xl" /proj/rep-learning-robotics/users/x_nonra/HuBERT-ECG/reproducibility/ptbxl/ptbxl_all_train.csv /proj/rep-learning-robotics/users/x_nonra/HuBERT-ECG/reproducibility/ptbxl/ptbxl_all_val.csv --training_steps 80000 --val_interval 2500 --mask_time_prob 0.33 --batch_size 448 --largeness "small" --alpha 1.0 --kmeans_path /proj/rep-learning-robotics/users/x_nonra/HuBERT-ECG/kmeans/kmeans_paths.txt --train_features_path /proj/rep-learning-robotics/users/x_nonra/HuBERT-ECG/data/ptb-xl_features_train --val_features_path /proj/rep-learning-robotics/users/x_nonra/HuBERT-ECG/data/ptb-xl_features_val --vocab_sizes 100 --dynamic_reg
+```
 
 ## Fine-tuning
 `finetune.py` contains the code to fine-tune and train from scratch HuBERT-ECG in a supervised manner. `python finetune.py --help` is highly suggested as well as a look at `finetune.sh`

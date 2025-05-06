@@ -97,7 +97,8 @@ def dump_ecg_features(record, in_dir, dest_dir, mfcc_only, time_freq, device, sa
         shard_length = SHARD_SIZE_50
         cnn_compression_factor = CNN_COMPRESSION_FACTOR_50
     
-    if np.load(path).shape[0] != 93: #if features do not exist then calculate them, skip otherwise
+    if not os.path.isfile(path + ".npy") or np.load(path).shape[0] != 93: #if features do not exist then calculate them, skip otherwise
+    # if not os.path.isfile(path + ".npy"):
         
         data = np.load(os.path.join(in_dir, filename))
         data = data[:, :2500]

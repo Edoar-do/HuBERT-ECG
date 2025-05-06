@@ -16,14 +16,14 @@ from math import ceil
 from dataset import ECGDataset
 import os
 import random
-from transformers.models.hubert.modeling_hubert import compute_mask_indices
+# from transformers.models.hubert.modeling_hubert import compute_mask_indices
 from transformers import HubertConfig
 
 EPS = 1E-09
 MINIMAL_IMPROVEMENT = 1e-3
 DROPOUT_DYNAMIC_REG_FACTOR = 0.05
 
-SELF_SUPERVISED_MODEL_CKPT_PATH = "/data/ECG_AF/ECG_pretraining/models/checkpoints/self-supervised/"
+SELF_SUPERVISED_MODEL_CKPT_PATH = "/proj/rep-learning-robotics/users/x_nonra/HuBERT-ECG/models/checkpoints/self-supervised"
 
 def dynamic_regularizer(optimizer, model, penalty):
     if penalty:
@@ -46,7 +46,7 @@ def train(args):
     device = torch.device('cuda')
     
     ### NOTE: comment for sweeps, uncomment for normal run ###
-    wandb.init(entity="my-entity", project="my-project", group="self-supervised")
+    wandb.init()
 
     if args.wandb_run_name is not None:
         wandb.run.name = args.wandb_run_name
@@ -220,7 +220,7 @@ def train(args):
     
     train_set = ECGDataset(
         path_to_dataset_csv=args.path_to_dataset_csv_train,
-        ecg_dir_path="/data/ECG_AF/train_self_supervised",
+        ecg_dir_path=args.data_path,
         downsampling_factor = args.downsampling_factor,
         features_path=args.train_features_path,
         kmeans_path = args.kmeans_path,
@@ -228,7 +228,7 @@ def train(args):
 
     val_set = ECGDataset(
         path_to_dataset_csv=args.path_to_dataset_csv_val,
-        ecg_dir_path="/data/ECG_AF/val_self_supervised",
+        ecg_dir_path=args.data_path,
         features_path=args.val_features_path,
         downsampling_factor = args.downsampling_factor,
         kmeans_path = args.kmeans_path,
@@ -459,6 +459,14 @@ if __name__ == "__main__":
         type=int,
         choices=[1, 2, 3]
     )
+
+    # data_path
+    parser.add_argument(
+        "data_path",
+        help="Path to the directory containing the ECG data",
+        type=str,
+        default="/proj/rep-learning-robotics/users/x_nonra/HuBERT-ECG/data/ptb-xl"
+    )
     
     #path_to_dataset_csv_train
     parser.add_argument(
@@ -490,28 +498,28 @@ if __name__ == "__main__":
     
     #val_interval
     parser.add_argument(
-        "val_interval",
+        "--val_interval",
         help="Number of training steps to wait before validating the model",
         type=int
     )
     
     #mask_time_prob
     parser.add_argument(
-        "mask_time_prob",
+        "--mask_time_prob",
         help="Probability of masking a time step in the input sequence",
         type=float
     )
     
     #batch_size
     parser.add_argument(
-        "batch_size",
+        "--batch_size",
         help="Batch_size",
         type=int
     )
     
     #largeness
     parser.add_argument(
-        "largeness",
+        "--largeness",
         help="Model largeness in {base, large, x-large}",
         type=str,
         choices=["base", "large", "small"]
@@ -519,35 +527,35 @@ if __name__ == "__main__":
     
     #alpha
     parser.add_argument(
-        "alpha",
+        "--alpha",
         help="[OPT] Alpha weight in the pretraining loss function",
         type=float
     )
     
     #kmeans_path
     parser.add_argument(
-        "kmeans_path",
+        "--kmeans_path",
         help="Path to a file that contains paths to KMeans models ",
         type=str
     )
     
     #train_features_path
     parser.add_argument(
-        "train_features_path",
+        "--train_features_path",
         help="In case of pretraining or resumed pretraing, the path from which training features to cluster can be loaded",
         type=str,
     )
     
     #val_features_path
     parser.add_argument(
-        "val_features_path",
+        "--val_features_path",
         help="In case of pretraining or resumed pretraing, the path from which validation features to cluster can be loaded",
         type=str,
     )
     
     #vocab_sizes
     parser.add_argument(
-        "vocab_sizes",
+        "--vocab_sizes",
         help="Vocabulary sizes, i.e. num of labels/clusters per each task/clustering model",
         type=int,
         nargs="+"
@@ -615,7 +623,7 @@ if __name__ == "__main__":
     # weight_decay_mult
     parser.add_argument(
         "--weight_decay_mult",
-        help="Weight decay. Default 0",
+        help="Weight decay. Default 1",
         type=int,
         default=1
     )

@@ -16,14 +16,14 @@ def cluster(args):
     
     group = f"clustering_iteration_{args.train_iteration}"
    
-    wandb.init(entity="cardi-ai", project="ECG-pretraining", group=group)
+    wandb.init()
 
     np.random.seed(42)
     random.seed(42)
     
     data_set = ECGDataset(
         path_to_dataset_csv = args.path_to_dataset_csv,
-        ecg_dir_path = "/data/ECG_AF/train_self_supervised/",
+        ecg_dir_path =args.data_path,
         pretrain = False,
         encode = True
     )
@@ -97,7 +97,7 @@ def cluster(args):
         
         model_name +=  "_" + sse + ".pkl"
         
-        joblib.dump(model, os.path.join("/data/ECG_AF/ECG_pretraining/HuBERT/kmeans", model_name))
+        joblib.dump(model, os.path.join("/proj/rep-learning-robotics/users/x_nonra/HuBERT-ECG/kmeans", model_name))
         logger.info(f"{model_name} model saved.\n")
         
         n_clusters = n_clusters + args.step
@@ -166,6 +166,13 @@ if __name__ == "__main__":
         help="path to the dataset in csv format to use",
         type=str
     )
+
+    parser.add_argument(
+        "data_path",
+        help="path to the directory containing the ECG data",
+        type=str, 
+        default="/proj/rep-learning-robotics/users/x_nonra/HuBERT-ECG/data/ptb-xl"
+    )
     
     parser.add_argument(
         "in_dir",
@@ -198,13 +205,13 @@ if __name__ == "__main__":
     )
     
     parser.add_argument(
-        "train_iteration",
+        "--train_iteration",
         help="iteration of the training",
         type=int,
     )
     
     parser.add_argument(
-        "batch_size",
+        "--batch_size",
         help="batch size",
         type=int,
     )
