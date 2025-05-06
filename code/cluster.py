@@ -16,14 +16,14 @@ def cluster(args):
     
     group = f"clustering_iteration_{args.train_iteration}"
    
-    wandb.init(entity="cardi-ai", project="ECG-pretraining", group=group)
+    wandb.init(entity="your-entity", project="your-project", group=group)
 
     np.random.seed(42)
     random.seed(42)
     
     data_set = ECGDataset(
         path_to_dataset_csv = args.path_to_dataset_csv,
-        ecg_dir_path = "/data/ECG_AF/train_self_supervised/",
+        ecg_dir_path = args.in_dir,
         pretrain = False,
         encode = True
     )
@@ -97,7 +97,7 @@ def cluster(args):
         
         model_name +=  "_" + sse + ".pkl"
         
-        joblib.dump(model, os.path.join("/data/ECG_AF/ECG_pretraining/HuBERT/kmeans", model_name))
+        joblib.dump(model, os.path.join("./", model_name))
         logger.info(f"{model_name} model saved.\n")
         
         n_clusters = n_clusters + args.step
@@ -108,7 +108,7 @@ def evaluate_clustering(args):
     
     group = f"clustering_iteration_{args.train_iteration}_evaluation"
     
-    wandb.init(entity="cardi-ai", project="ECG-pretraining", group=group)
+    wandb.init(entity="your-project", project="your-project", group=group)
     
     
     
