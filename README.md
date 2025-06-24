@@ -33,7 +33,7 @@ Prediction on a single instance takes less than 1 second on an A100 GPU node.
 ## 📚 Citation
 If you use our models or find our work useful, please consider citing us:
 ```
-doi: https://doi.org/10.1101/2024.11.14.24317328
+https://doi.org/10.1101/2024.11.14.24317328
 ```
 
 
