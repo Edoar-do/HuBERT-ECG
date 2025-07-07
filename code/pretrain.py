@@ -23,7 +23,7 @@ EPS = 1E-09
 MINIMAL_IMPROVEMENT = 1e-3
 DROPOUT_DYNAMIC_REG_FACTOR = 0.05
 
-SELF_SUPERVISED_MODEL_CKPT_PATH = "/data/ECG_AF/ECG_pretraining/models/checkpoints/self-supervised/"
+SELF_SUPERVISED_MODEL_CKPT_PATH = "/path/to/models/checkpoints/self-supervised/"
 
 def dynamic_regularizer(optimizer, model, penalty):
     if penalty:
