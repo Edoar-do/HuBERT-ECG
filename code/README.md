@@ -1,3 +1,8 @@
+# For future users and fine-tuners
+
+Before start reading the contents of this folder, please be aware that you need to pre-process all your ECGs as this is not done on-the-fly and HuBERT-ECG was trained bandpass-filtered and rescaled signals.
+While the `ECGDataset` can be tasked with downsampling (see the `downsampling_factor` parameter) and cropping to 5 seconds, filtering and rescaling must be performed a-priori. The .csv file will therefore reference preprocessed files ready to be loaded and used. The preprocessing functions can be found in the `utils.py` file.
+
 # Code explanation
 
 ## Dumping
@@ -28,4 +33,4 @@ The difference consists in projection & look-up embedding matrices present in th
 `test.py` contains the code to evaluate fine-tuned or fully trained HuBERT-ECG instances on test data. `python test.py --help` is highly suggested as well as a look at `test.sh`
 
 ## Utils
-`utils.py` contains utility functions.
+`utils.py` contains utility functions, including those for preprocessing.
