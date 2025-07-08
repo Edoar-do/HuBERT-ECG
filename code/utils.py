@@ -379,7 +379,7 @@ def apply_filter(signal, filter_bandwidth, fs=500):
                                 sampling_rate=fs)
     return signal
 
-def scaling(ecg_signal, smooth=1e-8):
+def scaling(seq, smooth=1e-8):
     return 2 * (seq - np.min(seq, axis=1)[None].T) / (np.max(seq, axis=1) - np.min(seq, axis=1) + smooth)[None].T - 1
 
 def ecg_preprocessing(ecg_signal, original_frequency, target_frequency=100, band_pass=[0.05, 47]):
