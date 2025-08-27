@@ -101,8 +101,11 @@ class HuBERTForECGClassification(nn.Module):
                 output_hidden_states=output_hidden_states,
                 return_dict=return_dict
             ) 
-        
-        x = encodings.last_hidden_state
+
+        if return_dict:
+            x = encodings.last_hidden_state
+        else:
+            x = encodings[0]
         
         if attention_mask is None:
             x = x.mean(dim=1) 
@@ -112,6 +115,7 @@ class HuBERTForECGClassification(nn.Module):
             x = x.sum(dim=1) / padding_mask.sum(dim=1).view(-1, 1)
             
         x = self.classifier_dropout(x)
+
         
         output = (
             self.get_logits(x) if self.use_label_embedding else self.classifier(x),
