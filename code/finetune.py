@@ -398,7 +398,7 @@ def finetune(args):
             labels = labels.squeeze().to(device)
             
             with amp.autocast():
-                logits, _ = hubert(ecg, attention_mask=attention_mask, output_attentions=False, output_hidden_states=False, return_dict=True)
+                logits, _ = hubert(ecg, attention_mask=attention_mask, output_attentions=False, output_hidden_states=False, return_dict=False)
                 loss = criterion_train(logits, labels)
                 
                 loss /= accumulation_steps # normalize loss
@@ -452,7 +452,7 @@ def finetune(args):
                     labels = labels.squeeze().to(device)
                     
                     with torch.no_grad():
-                        logits, _ = hubert(ecg, attention_mask=None, output_attentions=False, output_hidden_states=False, return_dict=True)
+                        logits, _ = hubert(ecg, attention_mask=None, output_attentions=False, output_hidden_states=False, return_dict=False)
                         loss = criterion_val(logits, labels)
                     
                     val_losses.append(loss.item())
