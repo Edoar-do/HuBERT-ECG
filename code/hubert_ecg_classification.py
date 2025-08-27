@@ -115,11 +115,11 @@ class HuBERTForECGClassification(nn.Module):
             x = x.sum(dim=1) / padding_mask.sum(dim=1).view(-1, 1)
             
         x = self.classifier_dropout(x)
-
         
-        output = (
-            self.get_logits(x) if self.use_label_embedding else self.classifier(x),
-            encodings
-        )
+        logits = self.get_logits(x) if self.use_label_embedding else self.classifier(x)
         
-        return output
+        if return_dict:
+            encodings["logits"] = logits
+            return encodings
+        else:
+            return (logits, encodings)
