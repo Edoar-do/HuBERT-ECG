@@ -106,7 +106,7 @@ def finetune(args):
     
     lr = args.lr
     betas = (0.9, 0.98)
-    weight_decay = 0.01 * args.weight_decay_mult
+    weight_decay = max(0, 0.01 * args.weight_decay_mult)
     accumulation_steps = args.accumulation_steps
     
     task2criteria = {
@@ -241,11 +241,11 @@ def finetune(args):
             conv_stride = conv_stride,
             conv_dim = conv_dim,
             mask_time_length = 1,
-            hidden_dropout=0.1 + DROPOUT_DYNAMIC_REG_FACTOR * args.model_dropout_mult,
-            activation_dropout=0.1 + DROPOUT_DYNAMIC_REG_FACTOR * args.model_dropout_mult,
-            attention_dropout=0.1 + DROPOUT_DYNAMIC_REG_FACTOR * args.model_dropout_mult,
-            feat_proj_dropout=0 + DROPOUT_DYNAMIC_REG_FACTOR * args.model_dropout_mult,
-            final_dropout=0.1 + DROPOUT_DYNAMIC_REG_FACTOR * args.model_dropout_mult,    
+            hidden_dropout=max(0, 0.1 + DROPOUT_DYNAMIC_REG_FACTOR * args.model_dropout_mult),
+            activation_dropout=max(0, 0.1 + DROPOUT_DYNAMIC_REG_FACTOR * args.model_dropout_mult),
+            attention_dropout=max(0, 0.1 + DROPOUT_DYNAMIC_REG_FACTOR * args.model_dropout_mult,
+            feat_proj_dropout=max(0, 0 + DROPOUT_DYNAMIC_REG_FACTOR * args.model_dropout_mult),
+            final_dropout=max(0, 0.1 + DROPOUT_DYNAMIC_REG_FACTOR * args.model_dropout_mult),    
         ) # + other default params
         
         hubert = HuBERT(config)
