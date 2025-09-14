@@ -38,6 +38,8 @@ def cluster(args):
     )
     
     n_clusters = args.n_clusters_start
+
+    normalizer = preprocessing.Normalizer()
     
     while n_clusters <= args.n_clusters_end:
         
@@ -57,7 +59,7 @@ def cluster(args):
                 n_clusters = n_clusters,
                 random_state = 42,
                 compute_labels = True,
-                batch_size = args.batch_size * 93,
+                batch_size = args.batch_size * 93, # 93 is the number of ECG embeddings/tokens before the Transformer
                 n_init = 20,
                 max_no_improvement = 100,
                 reassignment_ratio = 0.0
@@ -75,7 +77,7 @@ def cluster(args):
             features = np.concatenate(features, axis = 0) 
             
             # normalize features in the batch
-            features = preprocessing.Normalizer().fit_transform(features)
+            features = normalizer.transform(features)
             
             # train kmeans
             model.partial_fit(features) 
