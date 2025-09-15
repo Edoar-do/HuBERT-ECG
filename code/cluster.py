@@ -1,7 +1,8 @@
+import os
+os.environ["OPENBLAS_NUM_THREADS"] = "4"
 from dataset import ECGDataset
 from torch.utils.data import DataLoader
 from sklearn.cluster import MiniBatchKMeans
-import os
 from sklearn import preprocessing
 import joblib
 from tqdm import tqdm
@@ -34,7 +35,8 @@ def cluster(args):
         num_workers=5,
         shuffle = True,
         pin_memory = True,
-        drop_last=True
+        drop_last=True,
+        prefetch_factor=4
     )
     
     n_clusters = args.n_clusters_start
