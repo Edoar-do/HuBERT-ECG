@@ -659,8 +659,8 @@ if __name__ == "__main__":
     if args.largeness not in ["base", "large", "small"]:
         raise ValueError(f"Argument largeness must be in [base, large, x-large] range. Inserted {args.largeness}")
     
-    if args.mask_time_prob < 0.0 or args.mask_time_prob > 1.0:
-        raise ValueError(f"Argument mask_time_prob must be a float in [0.0, 1.0] range. Inserted {args.mask_time_prob}")
+    if args.mask_time_prob <= 0.0 or args.mask_time_prob >= 1.0:
+        raise ValueError(f"Argument mask_time_prob must be a float in (0.0, 1.0) range. Inserted {args.mask_time_prob}")
     
     if args.alpha < 0.0 or args.alpha > 1.0:
         raise ValueError(f"Argument alpha must be a float in [0.0, 1.0] and must provided if pretrain is provided. Inserted {args.alpha}")
