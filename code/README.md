@@ -25,7 +25,7 @@ The architecture of HuBERT-ECG one sees during pre-training is provided in the `
 The difference consists in projection & look-up embedding matrices present in the former architecture that are replaced by the classification head present in the latter one.
 
 ## Pre-training
-`pretrain.py` contains the code to pre-train HuBERT-ECG in a self-supervised manner. `python pretrain.py --help` is highly suggested.
+`pretrain.py` contains the code to pre-train HuBERT-ECG in a self-supervised manner. `python pretrain.py --help` is highly suggested. In addition, `pretraining.sh` is also helpful.
 
 ## Fine-tuning
 `finetune.py` contains the code to fine-tune and train from scratch HuBERT-ECG in a supervised manner. `python finetune.py --help` is highly suggested as well as a look at `finetune.sh`
