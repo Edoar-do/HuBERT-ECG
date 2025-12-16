@@ -289,7 +289,7 @@ def finetune(args):
         config.layerdrop = args.finetuning_layerdrop
 
         pretrained_hubert = HuBERT(config)
-        hubert.hubert_ecg.load_state_dict(checkpoint['model_state_dict']) # load backbone weights
+        pretrained_hubert.load_state_dict(checkpoint['model_state_dict']) # load backbone weights
         
         # restore original p-dropout or set multipliers
         for name, module in pretrained_hubert.named_modules():
