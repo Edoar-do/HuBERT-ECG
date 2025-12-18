@@ -13,6 +13,7 @@ from torcheval.metrics import MultilabelAUPRC as AUPRC
 from torcheval.metrics import MulticlassAUROC, MulticlassAccuracy, MulticlassAUPRC
 import argparse
 from scipy.signal import resample
+import sklearn
 from biosppy.signals.tools import filter_signal
 
 def get_CI_intervals_by_bootstrapping(path_to_csv_test_set, label_start_index=3, N=1000, task='multi_label', average="none", alpha=0.95, path_to_performance=None):
@@ -115,7 +116,7 @@ def get_CI_intervals_by_bootstrapping(path_to_csv_test_set, label_start_index=3,
     # bootstrapping
     bootstrapped_differences = {metric_name : [] for metric_name in metrics.keys()}
     for i in range(N):
-        ids = resample(range(len(y_true)), n_samples=len(y_true), stratify=df.iloc[:, label_start_index:].values)
+        ids = sklearn.utils.resample(range(len(y_true)), n_samples=len(y_true), stratify=df.iloc[:, label_start_index:].values)
         for metric_name, metric in metrics.items():
             metric.reset()
             metric.update(y_pred[ids], y_true[ids])
