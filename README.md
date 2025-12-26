@@ -1,4 +1,4 @@
-# HuBERT-ECG as a Self-Supervised Foundation Model for Broad and Scalable Cardiac Application
+#HuBERT-ECG as a Self-Supervised Foundation Model for Broad and Scalable Cardiac Application
 
 [![medrXiv](https://img.shields.io/badge/medRxiv-green)](https://www.medrxiv.org/content/10.1101/2024.11.14.24317328v2)
 License: CC BY-NC 4.0
@@ -27,8 +27,10 @@ Full installation time may take up to 1 minute.
 
 ## Reproducibility
 In the `reproducibility` folder you can find all train, validation, and test splits we used in our work as .csv files. You simply have to follow the instructions in the `reproducibility/README.md` to reproduce our results.
-As an example, you can easily fine-tune and evaluate an instance of HuBERT-ECG on PTB-XL All dataset, as shown in .sh scripts `finetune.sh` and `test.sh`.
-Thw forward pass on a single instance takes less than 1 second on an A100 GPU node, which is also the machine we ran our experiments and evaluations on.
+In the `finetune.sh`, there is ready-to-launch code for reproduce fine-tuning of pre-trained models while in the `test.sh` scfipt there's the code for evaluation of fine-tuned models.
+Similarly, `train_from_scratch` allows you to replicate every training from scratch, that is, train in a fully supervised manner the same models with random initialization. `inference_from_training_from_scratch.sh` contains the code to run evaluation of these trained-from-scratch models.
+The forward pass on a single instance takes less than 1 second on an A100 GPU node, which is also the machine we ran our experiments and evaluations on.
+Experiments on `Google Colab` show that even the LARGE model size can easily fit into a T4 GPU.
 The splits were used in cross-validation experiments/evaluations to also mitigate the performance difference that can be be observed when using different hardware and machiens.
 
 ## 📚 Citation
