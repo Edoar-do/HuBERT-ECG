@@ -387,9 +387,10 @@ def ecg_preprocessing(ecg_signal, original_frequency, target_frequency=100, band
 
     assert ecg_signal.shape[0] == 12, "ecg_signal should have (12, signal_length) shape for pre-processing"
 
+    ecg_signal = apply_filter(ecg_signal, band_pass, fs=original_frequency) # this band focuses on dominant component of ecg waves
+
     ecg_signal = resample(ecg_signal, int(ecg_signal.shape[-1] * (500/original_frequency)), axis=1) 
     # 500 hz is the highest and most common sampling rate found in literature and respects Shannon theorem, as max spectral component is said to be 150 hz
-
-    ecg_signal = apply_filter(ecg_signal, band_pass) # this band focuses on dominant component of ecg waves
+    # saving at 500 Hz is only for pure comfort to have all ECG datasets at this sampling rate
 
     return scaling(ecg_signal)
