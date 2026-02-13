@@ -384,6 +384,9 @@ def finetune(args):
         metric.to(device)
     
     for epoch in range(start_epoch, epochs):
+
+        if global_step >= args.training_steps:
+            break
     
         hubert.train()
         
@@ -562,6 +565,9 @@ def finetune(args):
                             "patience_count": patience_count
                             })
                         return
+
+            if global_step >= args.training_steps:
+                break
                 
     logger.info("End of finetuning.")
     logger.info(f"Best val loss = {best_val_loss}")
