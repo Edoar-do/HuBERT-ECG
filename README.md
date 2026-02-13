@@ -19,7 +19,7 @@ Deep learning models have shown remarkable performance in electrocardiogram (ECG
 ## Model weights
 All our models are accessible on Hugging Face [(https://huggingface.co/Edoardo-BS)] under CC BY-NC 4.0 license
 
-## How to use HuBERT-ECG on your own datasets
+## ⚠️ How to use HuBERT-ECG on your own datasets ⚙️
 ### Create your dataset
 First, you need to take all your 12-lead ECGs and store them into a directory at the following path `ecg_dir_path` with `.npy` extension. Before saving them, we recommend to preprocess them using the preprocessing function in `utils.py` and sample them at multiples of 100 Hz so that downsampling to 100 Hz (see `__get_item__()` in `dataset.py`) can be easily accomplished by specifying the `downsampling_factor` when calling training scripts.
 Second, create a `.csv` file with the following columns: `filename`, opt. `age`, opt. `sex`, `label1`, ..., `labelN`. The `label` columns represent the classes/labels HuBERT-ECG has to learn and are filled in a multi-hot fashion for multi-label classification problems. For multi-class classification, binary classification and regression tasks, there should be only one `label` column, containing integer class indices from `0` to `C-1` or real values to predict in case of regression tasks. NOTE: binary classification is treated as a 2-class problem. the `filename` column is used in conjuction with `ecg_dir_path` to reference you ECG files but can optionally contain the entire path to those files, not only their basename. At the end of this process, for example, you should have something like this in case of multi-label classification
