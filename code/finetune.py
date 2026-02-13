@@ -30,6 +30,8 @@ EPS = 1e-9
 MINIMAL_IMPROVEMENT = 1e-3
 SUPERVISED_MODEL_CKPT_PATH = "/models/checkpoints/supervised/"
 DROPOUT_DYNAMIC_REG_FACTOR = 0.05
+
+os.makedirs(SUPERVISED_MODEL_CKPT_PATH, exist_ok=True)
     
 
 def dynamic_regularizer(optimizer, model, penalty):
