@@ -477,19 +477,20 @@ def finetune(args):
                     
                 # compute metrics on whole validation set and log them
                 # such metrics are vectors num_labels long containing the metric for each label
+                to_log = {
+                    "Training_loss": train_loss,
+                    "Validation_loss": val_loss,
+                    }
                 for name, metric in metrics.items():
                     score = metric.compute()
                     macro = score.mean()
                     logger.info(f"Validation {name} = {score}, macro: {macro}")
-                    wandb.log({f"Validation_{name}": macro})
+                    to_log[{f"Validation_{name}"] = macro
                     if name == args.target_metric:
                         target_score = macro
                 
                 # log losses
-                wandb.log({
-                    "Training_loss": train_loss,
-                    "Validation_loss": val_loss,
-                    })
+                wandb.log(to_log)
                     
                 hubert.train()
                 
