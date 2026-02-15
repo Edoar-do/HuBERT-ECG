@@ -21,7 +21,7 @@ All our models are accessible on Hugging Face [(https://huggingface.co/Edoardo-B
 
 ## ⚠️ How to use HuBERT-ECG on your own datasets ⚙️
 ### Create your dataset
-First, you need to take all your 12-lead ECGs and store them into a directory at the following path `ecg_dir_path` with `.npy` extension. Before saving them, we recommend to preprocess them using the preprocessing function in `utils.py` and sample them at multiples of 100 Hz so that downsampling to 100 Hz (see `__get_item__()` in `dataset.py`) can be easily accomplished by specifying the `downsampling_factor` when calling training scripts.
+First, you need to take all your 12-lead ECGs and store them into a directory at the following path `ecg_dir_path` with `.npy` extension. Before saving them, we recommend to preprocess them using the preprocessing function in `utils.py` and resample them at 500 Hz so that downsampling to 100 Hz and random cropping (see `__get_item__()` in `dataset.py`) can be easily accomplished by specifying the `downsampling_factor = 5` when calling training scripts.
 Second, create a `.csv` file with the following columns: `filename`, opt. `age`, opt. `sex`, `label1`, ..., `labelN`. The `label` columns represent the classes/labels HuBERT-ECG has to learn and are filled in a multi-hot fashion for multi-label classification problems. For multi-class classification, binary classification and regression tasks, there should be only one `label` column, containing integer class indices from `0` to `C-1` or real values to predict in case of regression tasks. NOTE: binary classification is treated as a 2-class problem. the `filename` column is used in conjuction with `ecg_dir_path` to reference you ECG files but can optionally contain the entire path to those files, not only their basename. At the end of this process, for example, you should have something like this in case of multi-label classification
 ```
 filename,age,sex,Atrial Fibrillation,Sinus Bradycardia,Normal,...
@@ -50,7 +50,7 @@ auroc \ # target metric to monitor for checkpointing
 --ecg_dir_path=/path/to/your/ECG/files # optional if the csv file references ECG by full path
 --load_path=path/to/hubert_ecg_small.pt \ # path to the m.pt model you have downloaded from hugging-face
 --training_steps=70000 \ # number of training steps to perform
---downsampling_factor=5 \ # downsampling factor to feed the model with ECGs sampled at 100 Hz (this assumes you saved them at 500 Hz but can be any multiple of 100 Hz)
+--downsampling_factor=5 \ # downsampling factor to feed the model with ECGs sampled at 100 Hz (this assumes you saved them at 500 Hz)
 --label_start_index=3 \ # the index of the csv file at which you start with label column
 --use_loss_weights \ # whether to use weights in the loss function computation
 --transformer_blocks_to_unfreeze=8 \ # number of transformer blocks/layers to finetune from the last one backwwards. up to 8 for small size, 12 for base size, 16 for large size
@@ -95,7 +95,14 @@ The splits were used in cross-validation experiments/evaluations to also mitigat
 ## 📚 Citation
 If you use our models or find our work useful, please consider citing us:
 ```
-https://doi.org/10.1101/2024.11.14.24317328
+@article{coppola2024hubert,
+  title={HuBERT-ECG as a self-supervised foundation model for broad and scalable cardiac applications},
+  author={Coppola, Edoardo and Savardi, Mattia and Massussi, Mauro and Adamo, Marianna and Metra, Marco and Signoroni, Alberto},
+  journal={medRxiv},
+  pages={2024--11},
+  year={2024},
+  publisher={Cold Spring Harbor Laboratory Press}
+}
 ```
 
 
