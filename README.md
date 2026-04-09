@@ -105,37 +105,9 @@ hubert-ecg-convert --input old_checkpoint.pt --output ./converted/ \
 > All scripts accept `--help` for the full argument list.
 > Set `WANDB_ENTITY` and `WANDB_PROJECT` environment variables before running.
 
-### Self-supervised pre-training
-
-```bash
-hubert-ecg-pretrain 1 train.csv val.csv 500 0.08 32 base 1.0 kmeans.txt \
-    train_features/ val_features/ 100 \
-    --ecg_train_dir /data/ecg/train \
-    --ecg_val_dir /data/ecg/val \
-    --output_dir ./checkpoints/pretrain \
-    --training_steps 400000
-```
-
-### Supervised fine-tuning
-
-```bash
-hubert-ecg-finetune 1 train.csv val.csv 164 20 32 auroc \
-    --load_path ./checkpoints/pretrain/hubert_1_step400000_abc123 \
-    --ecg_train_dir /data/ecg/train \
-    --ecg_val_dir /data/ecg/val \
-    --output_dir ./checkpoints/finetune \
-    --training_steps 70000 --val_interval 500 \
-    --downsampling_factor 5 \
-    --transformer_blocks_to_unfreeze 8
-```
-
-### Evaluation
-
-```bash
-hubert-ecg-evaluate test.csv /data/ecg/test 32 \
-    ./checkpoints/finetune/best_model \
-    --downsampling_factor 5 --save_id my_run
-```
+- For <b>self-supervised pre-training</b> take a look at `scripts/hubert-ecg-pretrain --help` and `scripts/pretrain.sh`.
+- For <b>supervised finetuning</b> take a look at `scripts/hubert-ecg-finetune --help` and `scripts/finetune.sh`.
+- For <b>test-time evaluation</b> take a look at `scripts/hubert-ecg-evaluate --help` and `scripts/test.sh`.
 
 ### Using memmap datasets (faster I/O for large datasets)
 
@@ -160,6 +132,7 @@ In the `reproducibility` folder you can find all train, validation, and test spl
 In `scripts/finetune.sh`, there is ready-to-launch code to reproduce fine-tuning of pre-trained models while `scripts/test.sh` contains the evaluation commands.
 Similarly, `scripts/train_from_scratch.sh` allows you to replicate every training from scratch. `scripts/inference_from_training_from_scratch.sh` contains the code to run evaluation of these trained-from-scratch models.
 The forward pass on a single instance takes less than 1 second on an A100 GPU node, which is also the machine we ran our experiments and evaluations on.
+
 Experiments on `Google Colab` show that even the LARGE model size can easily fit into a T4 GPU.
 The splits were used in cross-validation experiments/evaluations to also mitigate the performance difference that can be observed when using different hardware and machines.
 
