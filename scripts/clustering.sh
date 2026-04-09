@@ -11,7 +11,7 @@ layer=8 # only for logging purposes, to better distinguish clustering on latent 
 # Each type of features is stored in a different directory.
 # The fitted kmeans models (with K ranging from `n_clusters_start` to `n_clusters_end`) will be saved in the current directory.
 
-python path/to/cluster.py \
+python -m hubert_ecg.cluster \
     /path/to/dataset.csv \
     /path/to/directory/containing/features/to/cluster/ \
     $train_iteration \
@@ -19,13 +19,13 @@ python path/to/cluster.py \
     --cluster \
     --n_clusters_start=100 \
     --n_clusters_end=300 \
-    --n_steps=100 \
+    --step=100 \
 
 # --- for clustering latent representations during subsequent pre-training iterations ---
 # The `dataset.csv` is likely to be the same. What changes is the directory in which the features to cluster are stored.
 # In this case, and generally when `train_iteration` > 1, the features are latent representations from the `--layer`-th layer of HuBERT-ECG.
 
-python path/to/cluster.py \
+python -m hubert_ecg.cluster \
     /path/to/dataset.csv \
     /path/to/directory/containing/features/to/cluster/ \
     $train_iteration \
@@ -33,7 +33,7 @@ python path/to/cluster.py \
     --cluster \
     --n_clusters_start=500 \
     --n_clusters_end=1000 \
-    --n_steps=500 \
+    --step=500 \
     --layer=$layer
 
 # --- for evaluating a previously fitted clustering model ---
@@ -43,7 +43,7 @@ python path/to/cluster.py \
 # The fitted kmeans model to evaluate is specified with the `--model_path` argument.
 # The evaluation dataset is specified as the first argument.
 
-python path/to/cluster.py \
+python -m hubert_ecg.cluster \
     /path/to/evaluation_dataset.csv \
     /path/to/directory/containing/features/to/use/for/evaluation/ \
     $train_iteration \

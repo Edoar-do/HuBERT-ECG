@@ -20,16 +20,148 @@ Deep learning models have shown remarkable performance in electrocardiogram (ECG
 All our models are accessible on Hugging Face [(https://huggingface.co/Edoardo-BS)] under CC BY-NC 4.0 license
 
 ## Installation
-Clone this repository and install all the necessary dependecies written in the `requirements.txt` file with ```pip install -r requirements.txt```.
-Full installation time may take up to 1 minute.
+
+### Option A: Python virtual environment (recommended for all users)
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate  # on Windows: .venv\Scripts\activate
+pip install --upgrade pip
+git clone https://github.com/Edoardo-BS/HuBERT-ECG.git
+cd HuBERT-ECG
+pip install -e .
+```
+
+### Option B: Conda
+
+```bash
+conda create -n hubert-ecg python=3.10
+conda activate hubert-ecg
+git clone https://github.com/Edoardo-BS/HuBERT-ECG.git
+cd HuBERT-ECG
+pip install -e .
+```
+
+### Option C: Docker
+
+Use a PyTorch base image for CUDA support:
+
+```Dockerfile
+FROM pytorch/pytorch:2.4.1-cuda12.1-cudnn8-runtime
+
+RUN pip install --upgrade pip
+
+WORKDIR /hubert-ecg
+COPY . .
+
+RUN pip install -e .
+
+CMD ["/bin/bash"]
+```
+
+Build and run:
+
+```bash
+git clone https://github.com/Edoardo-BS/HuBERT-ECG.git
+cd HuBERT-ECG
+docker build -t hubert-ecg .
+docker run --gpus all -it hubert-ecg bash
+```
+
+---
+
+After installation, you'll have the `hubert_ecg` Python package and four CLI entry points:
+`hubert-ecg-pretrain`, `hubert-ecg-finetune`, `hubert-ecg-evaluate`, `hubert-ecg-convert`.
+
+## Loading pre-trained models from Hugging Face
+
+After `pip install -e .`, the `hubert_ecg` package registers `HuBERTECG` and
+`HuBERTECGForClassification` with the HuggingFace AutoModel API:
+
+```python
+import hubert_ecg  # registers custom model types with AutoModel
+from transformers import AutoModel
+
+model = AutoModel.from_pretrained("Edoardo-BS/hubert-ecg-base")
+```
+
+To load a legacy `.pt` checkpoint (single-file format from the original release):
+
+```python
+from hubert_ecg import HuBERTECG
+model = HuBERTECG.from_pretrained_legacy("path/to/old_checkpoint.pt")
+```
+
+To convert a legacy checkpoint to HF format (and optionally push to Hub):
+
+```bash
+hubert-ecg-convert --input old_checkpoint.pt --output ./converted/
+hubert-ecg-convert --input old_checkpoint.pt --output ./converted/ \
+    --push_to_hub --hub_model_id YourOrg/hubert-ecg-base --hub_token $HF_TOKEN
+```
+
+## Training
+
+> All scripts accept `--help` for the full argument list.
+> Set `WANDB_ENTITY` and `WANDB_PROJECT` environment variables before running.
+
+### Self-supervised pre-training
+
+```bash
+hubert-ecg-pretrain 1 train.csv val.csv 500 0.08 32 base 1.0 kmeans.txt \
+    train_features/ val_features/ 100 \
+    --ecg_train_dir /data/ecg/train \
+    --ecg_val_dir /data/ecg/val \
+    --output_dir ./checkpoints/pretrain \
+    --training_steps 400000
+```
+
+### Supervised fine-tuning
+
+```bash
+hubert-ecg-finetune 1 train.csv val.csv 164 20 32 auroc \
+    --load_path ./checkpoints/pretrain/hubert_1_step400000_abc123 \
+    --ecg_train_dir /data/ecg/train \
+    --ecg_val_dir /data/ecg/val \
+    --output_dir ./checkpoints/finetune \
+    --training_steps 70000 --val_interval 500 \
+    --downsampling_factor 5 \
+    --transformer_blocks_to_unfreeze 8
+```
+
+### Evaluation
+
+```bash
+hubert-ecg-evaluate test.csv /data/ecg/test 32 \
+    ./checkpoints/finetune/best_model \
+    --downsampling_factor 5 --save_id my_run
+```
+
+### Using memmap datasets (faster I/O for large datasets)
+
+Build a memmap file once; it produces `train.memmap` (binary) and `train.memmap.index.csv` (index CSV with a `memmap_idx` column):
+
+```python
+from hubert_ecg.utils import build_memmap_dataset
+index_csv = build_memmap_dataset("train.csv", "/data/ecg/train", "train.memmap")
+# index_csv == "train.memmap.index.csv"
+```
+
+Then use the index CSV as the dataset CSV and pass the `.memmap` path to the training script:
+
+```bash
+hubert-ecg-finetune 1 train.memmap.index.csv val.csv ... \
+    --memmap_train train.memmap \
+    --ecg_train_dir /data/ecg/train ...
+```
 
 ## Reproducibility
 In the `reproducibility` folder you can find all train, validation, and test splits we used in our work as .csv files. You simply have to follow the instructions in the `reproducibility/README.md` to reproduce our results.
-In the `finetune.sh`, there is ready-to-launch code for reproduce fine-tuning of pre-trained models while in the `test.sh` scfipt there's the code for evaluation of fine-tuned models.
-Similarly, `train_from_scratch` allows you to replicate every training from scratch, that is, train in a fully supervised manner the same models with random initialization. `inference_from_training_from_scratch.sh` contains the code to run evaluation of these trained-from-scratch models.
+In `scripts/finetune.sh`, there is ready-to-launch code to reproduce fine-tuning of pre-trained models while `scripts/test.sh` contains the evaluation commands.
+Similarly, `scripts/train_from_scratch.sh` allows you to replicate every training from scratch. `scripts/inference_from_training_from_scratch.sh` contains the code to run evaluation of these trained-from-scratch models.
 The forward pass on a single instance takes less than 1 second on an A100 GPU node, which is also the machine we ran our experiments and evaluations on.
 Experiments on `Google Colab` show that even the LARGE model size can easily fit into a T4 GPU.
-The splits were used in cross-validation experiments/evaluations to also mitigate the performance difference that can be be observed when using different hardware and machiens.
+The splits were used in cross-validation experiments/evaluations to also mitigate the performance difference that can be observed when using different hardware and machines.
 
 ## 📚 Citation
 If you use our models or find our work useful, please consider citing us:

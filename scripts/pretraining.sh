@@ -14,7 +14,7 @@ vocab_sizes="100" # this space-separated list of integers must match the number 
 training_steps=80000 # in subsequent pre-training itearations, 800k steps were performed for the BASE model and 400k steps for SMALL and LARGE
 largeness="base"
 
-python /path/to/pretrain.py \
+hubert-ecg-pretrain \
   $train_iteration \
   $path_to_dataset_csv_train \
   $path_to_dataset_csv_val \
