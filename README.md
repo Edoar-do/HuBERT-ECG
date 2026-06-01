@@ -1,6 +1,6 @@
 # HuBERT-ECG as a Self-Supervised Foundation Model for Broad and Scalable Cardiac Application
 
-[![medrXiv](https://img.shields.io/badge/medRxiv-green)](https://www.medrxiv.org/content/10.1101/2024.11.14.24317328v2)
+[![medrXiv](https://img.shields.io/badge/medRxiv-green)](https://www.medrxiv.org/content/10.1101/2024.11.14.24317328)
 License: CC BY-NC 4.0
 
 
@@ -10,7 +10,7 @@ License: CC BY-NC 4.0
 The electrocardiogram (ECG) is a widely accessible tool for cardiovascular assessment, and thegrowing availability of ECG datasets has enabled the emergence of ECG foundation models.However, such foundation models often lack extensive evaluation across clinically heterogeneousdownstream tasks extending beyond conventional rhythm and conduction analysis. We presentHuBERT-ECG, a self-supervised foundation ECG model pre-trained on 9.1 million 12-lead ECGsfrom four countries and diverse patient populations, and evaluated through fine-tuning on 21independent datasets spanning more than 1.6k diagnostic and prognostic targets across adults andpaediatric cohorts, including single-lead settings. These tasks cover conditions for which the ECG isthe primary diagnostic modality, provides supportive but non-definitive diagnostic information, orenables acute-care prediction and prognostic modelling. Available in three model sizes to characterisescaling behaviour and support diverse computational constraints, HuBERT-ECG achieves AUROCranging from 84% to 99% on ECG-primary diagnostic tasks, 76% to 97% on supportive diagnostictasks, 74% to 91% on prognostic prediction tasks, and 88% to 92% on single-lead ECG benchmarks.Moreover, a large-scale multitask fine-tuning across 2.4 million subjects and 164 taskssimultaneously shows that AUROC further increases for clinically relevant tasks without extra task-specific supervision. We release pretrained models and code as building baselines.
 
 ## News
-- [01/06/2026] A **substantial** new version on medrxiv!
+- [06/2026] A **substantial** new version on medrxiv!
 - [06/2025] A new medrxiv version has been updated with new results, findings and insights!
 - [12/2024] Reproducibility has never been easier! Training, validation, and test splits ready to use in the reproducibility folder!
 - [12/2024] Pre-trained models are easily downloadable from Hugging Face using `AutoModel.from_pretrained`
