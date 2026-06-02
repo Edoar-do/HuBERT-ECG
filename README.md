@@ -11,7 +11,7 @@ The electrocardiogram (ECG) is a widely accessible tool for cardiovascular asses
 
 ## News
 - [06/2026] A **substantial** new version on medrxiv!
-- [06/2025] A new medrxiv version has been updated with new results, findings and insights!
+- [06/2025] A new version on medrxiv with new results, findings and insights!
 - [12/2024] Reproducibility has never been easier! Training, validation, and test splits ready to use in the reproducibility folder!
 - [12/2024] Pre-trained models are easily downloadable from Hugging Face using `AutoModel.from_pretrained`
 - [11/2024] Pre-trained models are freely available on HuggingFace
