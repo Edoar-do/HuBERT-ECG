@@ -19,7 +19,7 @@ The electrocardiogram (ECG) is a widely accessible tool for cardiovascular asses
 - [11/2024] This repository has been made public!
 
 ## Model weights
-All our models are accessible on Hugging Face [(https://huggingface.co/Edoardo-BS)] under CC BY-NC 4.0 license
+All our models are accessible on Hugging Face 🤗 [(https://huggingface.co/Edoardo-BS)] under CC BY-NC 4.0 license
 
 ## Installation
 
