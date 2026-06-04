@@ -10,10 +10,11 @@ License: CC BY-NC 4.0
 The electrocardiogram (ECG) is a widely accessible tool for cardiovascular assessment, and thegrowing availability of ECG datasets has enabled the emergence of ECG foundation models. However, such foundation models often lack extensive evaluation across clinically heterogeneousdownstream tasks extending beyond conventional rhythm and conduction analysis. We present HuBERT-ECG, a self-supervised foundation ECG model pre-trained on 9.1 million 12-lead ECGsfrom four countries and diverse patient populations, and evaluated through fine-tuning on 21 independent datasets spanning more than 1.6k diagnostic and prognostic targets across adults and paediatric cohorts, including single-lead settings. These tasks cover conditions for which the ECG is the primary diagnostic modality, provides supportive but non-definitive diagnostic information, or enables acute-care prediction and prognostic modelling. Available in three model sizes to characterise scaling behaviour and support diverse computational constraints, HuBERT-ECG achieves AUROC ranging from 84% to 99% on ECG-primary diagnostic tasks, 76% to 97% on supportive diagnostictasks, 74% to 91% on prognostic prediction tasks, and 88% to 92% on single-lead ECG benchmarks. Moreover, a large-scale multitask fine-tuning across 2.4 million subjects and 164 tasks simultaneously shows that AUROC further increases for clinically relevant tasks without extra task-specific supervision. We release pretrained models and code as building baselines.
 
 ## News
+- [06/2026] Cardio-Learning model checkpoints available on Hugging Face 🤗 for a more disease-oriented baseline to further finetune!
 - [06/2026] A **substantial** new version on medrxiv!
 - [06/2025] A new version on medrxiv with new results, findings and insights!
 - [12/2024] Reproducibility has never been easier! Training, validation, and test splits ready to use in the reproducibility folder!
-- [12/2024] Pre-trained models are easily downloadable from Hugging Face using `AutoModel.from_pretrained`
+- [12/2024] Pre-trained models are easily downloadable from Hugging Face 🤗 using `AutoModel` APIs!
 - [11/2024] Pre-trained models are freely available on HuggingFace
 - [11/2024] This repository has been made public!
 
