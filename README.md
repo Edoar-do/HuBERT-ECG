@@ -139,7 +139,7 @@ Experiments on `Google Colab` show that even the LARGE model size can easily fit
 The splits were used in cross-validation experiments/evaluations to also mitigate the performance difference that can be observed when using different hardware and machines.
 
 ## 📚 Citation
-If you use our models or find our work useful, please consider citing us:
+If you use our models or find our work useful, please consider giving us a star ⭐ and citing us:
 ```
 @article{coppola2024hubert,
   title={HuBERT-ECG as a self-supervised foundation model for broad and scalable cardiac applications},
