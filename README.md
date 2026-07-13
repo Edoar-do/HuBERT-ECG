@@ -4,7 +4,7 @@
 License: CC BY-NC 4.0
 
 
-📢 [Models](https://huggingface.co/Edoardo-BS) on Hugging Face 🤗
+📢 [SSL Pretrained and Finetuned Models](https://huggingface.co/Edoardo-BS) on Hugging Face 🤗
 
 ## Abstract
 The electrocardiogram (ECG) is a widely accessible tool for cardiovascular assessment, and thegrowing availability of ECG datasets has enabled the emergence of ECG foundation models. However, such foundation models often lack extensive evaluation across clinically heterogeneous downstream tasks extending beyond conventional rhythm and conduction analysis. We present HuBERT-ECG, a self-supervised foundation ECG model pre-trained on 9.1 million 12-lead ECGs from four countries and diverse patient populations, and evaluated through fine-tuning on 21 independent datasets spanning more than 1.6k diagnostic and prognostic targets across adults and paediatric cohorts, including single-lead settings. These tasks cover conditions for which the ECG is the primary diagnostic modality, provides supportive but non-definitive diagnostic information, or enables acute-care prediction and prognostic modelling. Available in three model sizes to characterise scaling behaviour and support diverse computational constraints, HuBERT-ECG achieves AUROC ranging from 84% to 99% on ECG-primary diagnostic tasks, 76% to 97% on supportive diagnostic tasks, 74% to 91% on prognostic prediction tasks, and 88% to 92% on single-lead ECG benchmarks. Moreover, a large-scale multitask fine-tuning across 2.4 million subjects and 164 tasks simultaneously shows that AUROC further increases for clinically relevant tasks without extra task-specific supervision. We release pretrained models and code as building baselines.
@@ -19,7 +19,7 @@ The electrocardiogram (ECG) is a widely accessible tool for cardiovascular asses
 - [11/2024] This repository has been made public!
 
 ## Model weights
-All our models are accessible on Hugging Face 🤗 [(https://huggingface.co/Edoardo-BS)] under CC BY-NC 4.0 license
+All our models, SSL pretrained and finetuned, are accessible on Hugging Face 🤗 [(https://huggingface.co/Edoardo-BS)] under CC BY-NC 4.0 license
 
 ## Installation
 
