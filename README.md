@@ -1,6 +1,7 @@
 # HuBERT-ECG as a Self-Supervised Foundation Model for Broad and Scalable Cardiac Application
 
 [![medrXiv](https://img.shields.io/badge/medRxiv-green)](https://www.medrxiv.org/content/10.1101/2024.11.14.24317328)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23139094.svg)](https://doi.org/10.5281/zenodo.23139094)
 License: CC BY-NC 4.0
 
 
