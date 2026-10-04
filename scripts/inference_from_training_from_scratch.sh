@@ -53,11 +53,6 @@ hubert-ecg-evaluate /path/to/chapman_test.csv . 64 /path/to/hubert_small_random_
 hubert-ecg-evaluate /path/to/chapman_test.csv . 64 /path/to/hubert_small_random_10.3k_chapman2.pt --downsampling_factor=5 --tta --tta_aggregation=max --n_augs=9 --save_id=chapman2_small_random 
 hubert-ecg-evaluate /path/to/chapman_test.csv . 64 /path/to/hubert_small_random_9.45k_chapman3.pt --downsampling_factor=5 --tta --tta_aggregation=max --n_augs=9 --save_id=chapman3_small_random 
 
-hubert-ecg-evaluate /path/to/cardiolearning_test.csv . 64 /path/to/hubert_small_random_34k_general.pt --downsampling_factor=5 --label_start_index=3 --save_id=cardiolearning_random_small --tta --tta_aggregation=max --n_augs=3
-hubert-ecg-evaluate /path/to/cardiolearning_test.csv . 64 /path/to/hubert_small_26k_cardiolearning_random_1.pt --downsampling_factor=5 --label_start_index=3 --save_id=cardiolearning_random_small_1 --tta --tta_aggregation=max --n_augs=3
-hubert-ecg-evaluate /path/to/cardiolearning_test.csv . 64 /path/to/hubert_small_32k_cardiolearning_random_2.pt --downsampling_factor=5 --label_start_index=3 --save_id=cardiolearning_random_small_2 --tta --tta_aggregation=max --n_augs=3
-hubert-ecg-evaluate /path/to/cardiolearning_test.csv . 64 /path/to/hubert_small_28.5k_cardiolearning_random_3.pt --downsampling_factor=5 --label_start_index=3 --save_id=cardiolearning_random_small_3 --tta --tta_aggregation=max --n_augs=3
-
 # base model size 
 
 hubert-ecg-evaluate /path/to/ningbo_test.csv . 64 /path/to/hubert_base_random_26.5k_ningbo0.pt --downsampling_factor=5 --tta --n_augs=3 --save_id=ningbo0_base_random --tta_aggregation=max 
@@ -111,11 +106,6 @@ hubert-ecg-evaluate /path/to/cpsc_extra_test_3.csv . 64 /path/to/hubert_base_ran
 
 hubert-ecg-evaluate /path/to/ribeiro_test_set.csv /path/to/ribeiro_test/ 64 /path/to/hubert_base_random_55k_tnmg.pt --downsampling_factor=5 --save_id=ribeiro_base_random 
 
-hubert-ecg-evaluate /path/to/cardiolearning_test.csv . 64 /path/to/hubert_base_random_33k_general.pt --downsampling_factor=5 --label_start_index=3 --save_id=cardiolearning_random_base --tta --tta_aggregation=max --n_augs=3
-hubert-ecg-evaluate /path/to/cardiolearning_test.csv . 64 /path/to/hubert_base_58k_cardiolearning_random_1.pt --downsampling_factor=5 --label_start_index=3 --save_id=cardiolearning_random_base_1 --tta --tta_aggregation=max --n_augs=3
-hubert-ecg-evaluate /path/to/cardiolearning_test.csv . 64 /path/to/hubert_base_28k_cardiolearning_random_2.pt --downsampling_factor=5 --label_start_index=3 --save_id=cardiolearning_random_base_2 --tta --tta_aggregation=max --n_augs=3
-hubert-ecg-evaluate /path/to/cardiolearning_test.csv . 64 /path/to/hubert_base_49.5k_cardiolearning_random_3.pt --downsampling_factor=5 --label_start_index=3 --save_id=cardiolearning_random_base_3 --tta --tta_aggregation=max --n_augs=3
-
 # large model size
 
 hubert-ecg-evaluate /path/to/ningbo_test.csv .  64 /path/to/hubert_large_random_24k_ningbo0.pt --downsampling_factor=5  --tta  --save_id=ningbo0_large_random --tta_aggregation=max
@@ -168,8 +158,3 @@ hubert-ecg-evaluate /path/to/chapman_test.csv .  64 /path/to/hubert_large_random
 hubert-ecg-evaluate /path/to/chapman_test.csv .  64 /path/to/hubert_large_random_3.4k_chapman1.pt --downsampling_factor=5  --tta --tta_aggregation=max --n_augs=9 --save_id=chapman1_large_random 
 hubert-ecg-evaluate /path/to/chapman_test.csv .  64 /path/to/hubert_large_random_3.95k_chapman2.pt --downsampling_factor=5  --tta --tta_aggregation=max --n_augs=9 --save_id=chapman2_large_random 
 hubert-ecg-evaluate /path/to/chapman_test.csv .  64 /path/to/hubert_large_random_2.8k_chapman3.pt --downsampling_factor=5  --tta --tta_aggregation=max --n_augs=9 --save_id=chapman3_large_random 
-
-hubert-ecg-evaluate /path/to/cardiolearning_test.csv . 64 /path/to/hubert_large_random_27.5k_general.pt --downsampling_factor=5 --label_start_index=3 --save_id=cardiolearning_random_large --tta --tta_aggregation=max --n_augs=3
-hubert-ecg-evaluate /path/to/cardiolearning_test.csv . 64 /path/to/hubert_large_12.5k_cardiolearning_random_1.pt --downsampling_factor=5 --label_start_index=3 --save_id=cardiolearning_random_large_1 --tta --tta_aggregation=max --n_augs=3
-hubert-ecg-evaluate /path/to/cardiolearning_test.csv . 64 /path/to/hubert_large_13.5k_cardiolearning_random_2.pt --downsampling_factor=5 --label_start_index=3 --save_id=cardiolearning_random_large_2 --tta --tta_aggregation=max --n_augs=3
-hubert-ecg-evaluate /path/to/cardiolearning_test.csv . 64 /path/to/hubert_large_56k_cardiolearning_random_3.pt --downsampling_factor=5 --label_start_index=3 --save_id=cardiolearning_random_large_3 --tta --tta_aggregation=max --n_augs=3

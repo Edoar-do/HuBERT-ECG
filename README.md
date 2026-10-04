@@ -13,7 +13,6 @@ The electrocardiogram (ECG) is a widely accessible tool for cardiovascular asses
 - [06/2026] Cardio-Learning model checkpoints available on Hugging Face 🤗 for a more disease-oriented baseline to further finetune!
 - [06/2026] A **substantial** new version on medrxiv!
 - [06/2025] A new version on medrxiv with new results, findings and insights!
-- [12/2024] Reproducibility has never been easier! Training, validation, and test splits ready to use in the reproducibility folder!
 - [12/2024] Pre-trained models are easily downloadable from Hugging Face 🤗 using `AutoModel` APIs!
 - [11/2024] Pre-trained models are freely available on HuggingFace
 - [11/2024] This repository has been made public!
@@ -130,13 +129,14 @@ hubert-ecg-finetune 1 train.memmap.index.csv val.csv ... \
 ```
 
 ## Reproducibility
-In the `reproducibility` folder you can find all train, validation, and test splits we used in our work as .csv files. You simply have to follow the instructions in the `reproducibility/README.md` to reproduce our results.
 In `scripts/finetune.sh`, there is ready-to-launch code to reproduce fine-tuning of pre-trained models while `scripts/test.sh` contains the evaluation commands.
 Similarly, `scripts/train_from_scratch.sh` allows you to replicate every training from scratch. `scripts/inference_from_training_from_scratch.sh` contains the code to run evaluation of these trained-from-scratch models.
 The forward pass on a single instance takes less than 1 second on an A100 GPU node, which is also the machine we ran our experiments and evaluations on.
 
 Experiments on `Google Colab` show that even the LARGE model size can easily fit into a T4 GPU.
-The splits were used in cross-validation experiments/evaluations to also mitigate the performance difference that can be observed when using different hardware and machines.
+
+### Cardio-Learning
+Everything related to Cardio-Learning lives in the `cardio-learning` folder: the ordered label columns needed to use the `hubert_ecg_{size}_cardio_learning` models, plus the fine-tuning, training-from-scratch and evaluation commands. See `cardio-learning/README.md` for details.
 
 ## 📚 Citation
 If you use our models or find our work useful, please consider giving us a star ⭐ and citing us:
